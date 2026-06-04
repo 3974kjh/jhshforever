@@ -1,4 +1,15 @@
-import type { InvitationContent } from './types';
+import type { GalleryImage, InvitationContent } from './types';
+
+function galleryImage(id: number): GalleryImage {
+	const n = String(id);
+	return {
+		thumb: `/gallery/thumbs/${n}.jpeg`,
+		thumbWebp: `/gallery/thumbs/${n}.webp`,
+		full: `/gallery/full/${n}.jpeg`
+	};
+}
+
+const GALLERY_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
 
 // ⬇️ 청첩장에 표시되는 모든 텍스트/이미지/연락처를 이 파일에서 관리합니다.
 //    (인터뷰 / 히스토리 문구는 예시이므로 자유롭게 수정하세요.)
@@ -157,21 +168,7 @@ export const content: InvitationContent = {
 	gallery: {
 		label: 'GALLERY',
 		title: '웨딩 갤러리',
-		images: [
-			'/gallery/1.jpeg',
-			'/gallery/2.jpeg',
-			'/gallery/3.jpeg',
-			'/gallery/4.jpeg',
-			'/gallery/5.jpeg',
-			'/gallery/6.jpeg',
-			'/gallery/7.jpeg',
-			'/gallery/8.jpeg',
-			'/gallery/9.jpeg',
-			'/gallery/10.jpeg',
-			'/gallery/11.jpeg',
-			'/gallery/12.jpeg',
-			'/gallery/13.jpeg'
-		],
+		images: GALLERY_IDS.map(galleryImage),
 		initialCount: 9,
 		loadMoreCount: 6
 	},

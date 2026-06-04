@@ -11,23 +11,35 @@
 	const hasMore = $derived(visibleCount < g.images.length);
 
 	let lightboxIndex = $state<number | null>(null);
+	let fullLoaded = $state(false);
+	let fullImgEl = $state<HTMLImageElement | null>(null);
+
+	const activeImage = $derived(lightboxIndex !== null ? g.images[lightboxIndex] : null);
+	const activeFullSrc = $derived(activeImage?.full ?? '');
 
 	function loadMore() {
 		visibleCount = Math.min(visibleCount + g.loadMoreCount, g.images.length);
 	}
 
 	function openAt(i: number) {
+		fullLoaded = false;
 		lightboxIndex = i;
 	}
 	function close() {
 		lightboxIndex = null;
+		fullLoaded = false;
 	}
 	function prev() {
-		if (lightboxIndex !== null)
+		if (lightboxIndex !== null) {
+			fullLoaded = false;
 			lightboxIndex = (lightboxIndex - 1 + g.images.length) % g.images.length;
+		}
 	}
 	function next() {
-		if (lightboxIndex !== null) lightboxIndex = (lightboxIndex + 1) % g.images.length;
+		if (lightboxIndex !== null) {
+			fullLoaded = false;
+			lightboxIndex = (lightboxIndex + 1) % g.images.length;
+		}
 	}
 	function onKey(e: KeyboardEvent) {
 		if (lightboxIndex === null) return;
@@ -35,6 +47,36 @@
 		if (e.key === 'ArrowLeft') prev();
 		if (e.key === 'ArrowRight') next();
 	}
+
+	function imageAlt(i: number, item: (typeof g.images)[number]) {
+		return item.alt ?? `웨딩 사진 ${i + 1}`;
+	}
+
+	function preloadFull(src: string) {
+		const img = new Image();
+		img.src = src;
+	}
+
+	$effect(() => {
+		if (lightboxIndex === null) return;
+		const len = g.images.length;
+		const nextIdx = (lightboxIndex + 1) % len;
+		const prevIdx = (lightboxIndex - 1 + len) % len;
+		preloadFull(g.images[nextIdx].full);
+		preloadFull(g.images[prevIdx].full);
+	});
+
+	$effect(() => {
+		activeFullSrc;
+		fullLoaded = false;
+	});
+
+	$effect(() => {
+		const el = fullImgEl;
+		if (el?.complete && el.naturalWidth > 0) {
+			fullLoaded = true;
+		}
+	});
 </script>
 
 <svelte:window onkeydown={onKey} />
@@ -43,9 +85,21 @@
 	<SectionHeading label={g.label} title={g.title} />
 
 	<div class="grid">
-		{#each shown as src, i (src)}
+		{#each shown as item, i (i)}
 			<button class="thumb" onclick={() => openAt(i)} aria-label="사진 {i + 1} 크게 보기">
-				<img {src} alt="웨딩 사진 {i + 1}" loading="lazy" />
+				<picture>
+					{#if item.thumbWebp}
+						<source srcset={item.thumbWebp} type="image/webp" />
+					{/if}
+					<img
+						src={item.thumb}
+						alt={imageAlt(i, item)}
+						width="480"
+						height="480"
+						loading="lazy"
+						decoding="async"
+					/>
+				</picture>
 			</button>
 		{/each}
 	</div>
@@ -57,11 +111,29 @@
 	{/if}
 </section>
 
-{#if lightboxIndex !== null}
+{#if lightboxIndex !== null && activeImage}
 	<div class="lightbox" transition:fade={{ duration: 180 }}>
 		<button class="lb-overlay" aria-label="닫기" onclick={close}></button>
 		<button class="lb-nav prev" aria-label="이전" onclick={prev}>‹</button>
-		<img class="lb-img" src={g.images[lightboxIndex]} alt="웨딩 사진 {lightboxIndex + 1}" />
+		<div class="lb-stage">
+			<img
+				class="lb-img lb-placeholder"
+				class:lb-hidden={fullLoaded}
+				src={activeImage.thumb}
+				alt=""
+				aria-hidden="true"
+			/>
+			{#key activeFullSrc}
+				<img
+					bind:this={fullImgEl}
+					class="lb-img lb-full"
+					class:lb-visible={fullLoaded}
+					src={activeFullSrc}
+					alt={imageAlt(lightboxIndex, activeImage)}
+					onload={() => (fullLoaded = true)}
+				/>
+			{/key}
+		</div>
 		<button class="lb-nav next" aria-label="다음" onclick={next}>›</button>
 		<button class="lb-close" aria-label="닫기" onclick={close}>×</button>
 		<span class="lb-count">{lightboxIndex + 1} / {g.images.length}</span>
@@ -86,7 +158,9 @@
 		border-radius: 2px;
 		background: var(--color-paper-dim);
 	}
+	.thumb picture,
 	.thumb img {
+		display: block;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
@@ -127,12 +201,41 @@
 		border: none;
 		cursor: pointer;
 	}
-	.lb-img {
+	.lb-stage {
 		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		max-width: 92vw;
+		max-height: 82vh;
+	}
+	.lb-img {
 		max-width: 92vw;
 		max-height: 82vh;
 		object-fit: contain;
 		border-radius: 4px;
+	}
+	.lb-placeholder {
+		position: relative;
+		z-index: 0;
+		filter: blur(2px);
+		opacity: 0.85;
+		transition: opacity 0.2s ease;
+	}
+	.lb-placeholder.lb-hidden {
+		opacity: 0;
+		pointer-events: none;
+	}
+	.lb-full {
+		position: absolute;
+		inset: 0;
+		margin: auto;
+		z-index: 1;
+		opacity: 0;
+		transition: opacity 0.25s ease;
+	}
+	.lb-full.lb-visible {
+		opacity: 1;
 	}
 	.lb-nav {
 		position: absolute;

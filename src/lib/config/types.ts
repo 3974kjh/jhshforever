@@ -99,10 +99,20 @@ export interface Calendar {
 	dDayText: string;
 }
 
+export interface GalleryImage {
+	/** 그리드용 썸네일 (JPEG fallback) */
+	thumb: string;
+	/** 그리드용 썸네일 (WebP, 지원 브라우저) */
+	thumbWebp?: string;
+	/** 라이트박스용 표시 해상도 이미지 */
+	full: string;
+	alt?: string;
+}
+
 export interface Gallery {
 	label: string;
 	title: string;
-	images: string[];
+	images: GalleryImage[];
 	/** 처음 보여줄 개수 */
 	initialCount: number;
 	/** 더보기 클릭 시 추가로 불러올 개수 */

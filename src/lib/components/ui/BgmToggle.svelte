@@ -6,7 +6,7 @@
 	let playing = $state(false);
 
 	async function play() {
-		if (!audioEl) return;
+		if (!audioEl || !bgm.enabled) return;
 		try {
 			await audioEl.play();
 			playing = true;
@@ -15,19 +15,24 @@
 		}
 	}
 
-	function toggle() {
+	function resumeIfStopped() {
+		if (!playing) play();
+	}
+
+	function onEnded() {
 		if (!audioEl) return;
-		if (playing) {
-			audioEl.pause();
-			playing = false;
-		} else {
-			play();
-		}
+		audioEl.currentTime = 0;
+		play();
 	}
 
 	$effect(() => {
+		if (!bgm.enabled || !audioEl || !bgm.autoplay) return;
+		play();
+	});
+
+	$effect(() => {
 		if (!bgm.enabled || !bgm.autoplay) return;
-		// 브라우저 정책상 첫 사용자 상호작용 후에 재생을 시도합니다.
+		// 자동재생이 막힌 경우 첫 상호작용 시 재생을 시도합니다.
 		const start = () => {
 			play();
 			window.removeEventListener('pointerdown', start);
@@ -40,15 +45,22 @@
 			window.removeEventListener('touchstart', start);
 		};
 	});
+
+	$effect(() => {
+		const el = audioEl;
+		if (!el) return;
+		el.addEventListener('ended', onEnded);
+		return () => el.removeEventListener('ended', onEnded);
+	});
 </script>
 
 {#if bgm.enabled}
-	<audio bind:this={audioEl} src={bgm.src} loop preload="none"></audio>
+	<audio bind:this={audioEl} src={bgm.src} loop preload="auto"></audio>
 	<button
 		class="bgm"
 		class:playing
-		onclick={toggle}
-		aria-label="배경음악 {playing ? '끄기' : '켜기'}"
+		onclick={resumeIfStopped}
+		aria-label="배경음악 {playing ? '재생 중' : '재생하기'}"
 	>
 		<span class="icon" aria-hidden="true">
 			{#if playing}

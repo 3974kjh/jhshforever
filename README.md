@@ -29,6 +29,19 @@ npm run dev
 npm run dev -- --open
 ```
 
+## Gallery images
+
+원본 사진은 `static/gallery/1.jpeg` … 형식으로 두고, 그리드·라이트박스용 파일은 생성 스크립트로 만듭니다.
+
+```sh
+pnpm gallery:assets
+```
+
+- `static/gallery/thumbs/` — 그리드 썸네일 (JPEG + WebP)
+- `static/gallery/full/` — 라이트박스용 (긴 변 1920px)
+
+원본을 추가·교체한 뒤 위 명령을 다시 실행하세요.
+
 ## Building
 
 To create a production version of your app:
