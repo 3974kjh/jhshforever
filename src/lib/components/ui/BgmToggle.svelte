@@ -15,8 +15,19 @@
 		}
 	}
 
-	function resumeIfStopped() {
-		if (!playing) play();
+	function pause() {
+		if (!audioEl) return;
+		audioEl.pause();
+		playing = false;
+	}
+
+	function toggle() {
+		if (playing) {
+			pause();
+			return;
+		}
+		if (audioEl) audioEl.currentTime = 0;
+		play();
 	}
 
 	function onEnded() {
@@ -49,8 +60,16 @@
 	$effect(() => {
 		const el = audioEl;
 		if (!el) return;
+		const onPlay = () => (playing = true);
+		const onPause = () => (playing = false);
 		el.addEventListener('ended', onEnded);
-		return () => el.removeEventListener('ended', onEnded);
+		el.addEventListener('play', onPlay);
+		el.addEventListener('pause', onPause);
+		return () => {
+			el.removeEventListener('ended', onEnded);
+			el.removeEventListener('play', onPlay);
+			el.removeEventListener('pause', onPause);
+		};
 	});
 </script>
 
@@ -59,8 +78,8 @@
 	<button
 		class="bgm"
 		class:playing
-		onclick={resumeIfStopped}
-		aria-label="배경음악 {playing ? '재생 중' : '재생하기'}"
+		onclick={toggle}
+		aria-label="배경음악 {playing ? '일시정지' : '재생하기'}"
 	>
 		<span class="icon" aria-hidden="true">
 			{#if playing}

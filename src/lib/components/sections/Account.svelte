@@ -12,6 +12,16 @@
 		openIndex = openIndex === i ? null : i;
 	}
 
+	const SCROLL_EXTRA_PX = 80;
+
+	function scrollExpandedIntoView(node: HTMLElement) {
+		const group = node.closest('.group');
+		if (!group) return;
+		const top =
+			window.scrollY + group.getBoundingClientRect().bottom - window.innerHeight + SCROLL_EXTRA_PX;
+		window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+	}
+
 	async function copy(value: string) {
 		try {
 			await navigator.clipboard.writeText(value);
@@ -37,7 +47,11 @@
 					<span class="chevron" class:open={openIndex === i}>⌄</span>
 				</button>
 				{#if openIndex === i}
-					<div class="group-body" transition:slide={{ duration: 250 }}>
+					<div
+						class="group-body"
+						transition:slide={{ duration: 250 }}
+						onintroend={(e) => scrollExpandedIntoView(e.currentTarget)}
+					>
 						{#each group.accounts as acc, j (j)}
 							<div class="acc">
 								<div class="acc-info">

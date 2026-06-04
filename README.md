@@ -42,6 +42,19 @@ pnpm gallery:assets
 
 원본을 추가·교체한 뒤 위 명령을 다시 실행하세요.
 
+## Section photos (hero, invitation, history)
+
+원본은 `static/photos/` 최상위에 두고, 청첩장·OG용 압축 JPEG는 생성 스크립트로 만듭니다.
+
+```sh
+pnpm photos:assets
+```
+
+- `static/photos/optimized/` — mozjpeg 품질 82, 긴 변 리사이즈 (히어로·초대장 1920px, 히스토리 960px)
+- 원본 파일명은 `.jpg` / `.jpeg` / `.png` / `.webp` 모두 지원합니다. 출력은 항상 `.jpeg`입니다.
+
+원본을 추가·교체한 뒤 위 명령을 다시 실행하고, `src/lib/config/content.ts`의 경로가 `/photos/optimized/…`를 가리키는지 확인하세요.
+
 ## Building
 
 To create a production version of your app:

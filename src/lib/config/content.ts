@@ -20,7 +20,7 @@ export const content: InvitationContent = {
 		bride: { ko: '박소현', en: 'Soohyun' },
 		dateText: '2027. 02. 28',
 		subText: 'SUN 12:20 PM',
-		image: '/photos/hero.JPG',
+		image: '/photos/optimized/hero.jpeg',
 		badge: 'Forever'
 	},
 
@@ -49,7 +49,7 @@ export const content: InvitationContent = {
 			name: '박소현'
 		},
 		contactPhone: '010-0000-0000',
-		image: '/photos/invitation.JPG'
+		image: '/photos/optimized/invitation.jpeg'
 	},
 
 	interview: {
@@ -117,34 +117,34 @@ export const content: InvitationContent = {
 				date: '2022.01.26',
 				title: '우리가 처음 만난 날',
 				description: '지인의 모임에서 우연히 마주 앉아\n이야기를 나누기 시작했습니다.',
-				image: '/photos/history-2022.jpeg'
+				image: '/photos/optimized/history-2022.jpeg'
 			},
 			{
 				year: '2023',
 				title: '특별하지 않아도',
 				description:
 					'특별한 변화 없이도\n서로의 하루에 자연스럽게 스며들었고,\n관계는 이어졌습니다.',
-				image: '/photos/history-2023.jpeg'
+				image: '/photos/optimized/history-2023.jpeg'
 			},
 			{
 				year: '2024',
 				title: '편안한 거리감',
 				description:
 					'자주 보지 않아도\n함께하는 시간은 늘 편안했고,\n그 감정이 점점 익숙해졌습니다.',
-				image: '/photos/history-2024.jpeg'
+				image: '/photos/optimized/history-2024.jpeg'
 			},
 			{
 				year: '2025',
 				title: '서로를 이해하는 시간',
 				description:
 					'다른 속도와 방식 속에서도\n서로를 이해하는 과정이\n관계를 더 단단하게 만들었습니다.',
-				image: '/photos/history-2025.jpeg'
+				image: '/photos/optimized/history-2025.jpeg'
 			},
 			{
 				year: '2026',
 				title: '평생을 약속하며',
 				description: '오랜 시간 함께한 마음을 모아\n서로에게 평생을 약속했습니다.',
-				image: '/photos/history-2026.jpeg'
+				image: '/photos/optimized/history-2026.jpeg'
 			},
 			{
 				year: '2027',
@@ -237,7 +237,7 @@ export const content: InvitationContent = {
 	share: {
 		title: '준형 ♥ 소현 결혼합니다',
 		description: '2027. 02. 28 (일) 오후 12시 20분 · 웨스턴베니비스 신도림',
-		image: '/photos/hero.JPG'
+		image: '/photos/optimized/hero.jpeg'
 	},
 
 	bgm: {
