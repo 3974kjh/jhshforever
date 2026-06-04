@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&family=Cormorant+Garamond:wght@300;400;500;600&display=swap');
+
+@theme {
+	--font-serif: 'Nanum Myeongjo', serif;
+	--font-sans: 'Noto Sans KR', sans-serif;
+	--font-display: 'Cormorant Garamond', 'Nanum Myeongjo', serif;
+
+	--color-paper: #f7f5f2;
+	--color-paper-dim: #efece7;
+	--color-ink: #2c2a28;
+	--color-ink-soft: #6b6660;
+	--color-ink-mute: #9c958c;
+	--color-accent: #8a6a45;
+	--color-accent-soft: #9a7d58;
+	--color-line: #e3ded6;
+	--color-point: #c2410c;
+}
+
+:root {
+	color-scheme: light;
+}
+
+html,
+body {
+	background-color: #e9e6e1;
+}
+
+body {
+	font-family: var(--font-sans);
+	color: var(--color-ink);
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+/* 모바일 청첩장: 가운데 정렬된 모바일 폭 컨테이너 */
+.invitation-shell {
+	width: 100%;
+	max-width: 460px;
+	margin: 0 auto;
+	background-color: var(--color-paper);
+	min-height: 100vh;
+	box-shadow: 0 0 60px rgba(0, 0, 0, 0.06);
+	overflow-x: hidden;
+}
+
+/* 스크롤 등장 애니메이션 */
+.reveal {
+	opacity: 0;
+	transform: translateY(24px);
+	transition:
+		opacity 0.9s ease,
+		transform 0.9s ease;
+}
+.reveal.in-view {
+	opacity: 1;
+	transform: translateY(0);
+}
