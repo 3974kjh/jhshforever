@@ -41,7 +41,7 @@
 		</p>
 	</div>
 
-	{#if inv.contactPhone}
+	<!-- {#if inv.contactPhone}
 		<a class="contact" href="tel:{inv.contactPhone}">
 			<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
 				<path
@@ -50,7 +50,7 @@
 			</svg>
 			연락하기
 		</a>
-	{/if}
+	{/if} -->
 </section>
 
 <style>
