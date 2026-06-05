@@ -17,6 +17,8 @@ export interface Main {
 	subText: string;
 	/** 히어로 배경 이미지 경로 */
 	image: string;
+	/** 날짜/시간 하단 강조 문구 (예: 웨스턴베니비스 신도림) */
+	hallHighlight?: string;
 	/** 메인 상단/하단 작은 라벨 */
 	badge?: string;
 }
@@ -125,11 +127,20 @@ export interface BusGroup {
 	numbers: string;
 }
 
+export interface SubwayLine {
+	/** 호선 번호 (예: 1, 2) */
+	number: number;
+	/** 노선 색상 (예: #0F218B) */
+	color: string;
+}
+
 export interface Location {
 	label: string;
 	title: string;
 	/** 식장 이름 */
 	hallName: string;
+	/** 홀 이름 (예: 그레이스홀) */
+	hallRoom?: string;
 	/** 층/홀 정보 */
 	hallDetail?: string;
 	roadAddress: string;
@@ -141,7 +152,9 @@ export interface Location {
 	/** 지도 좌표 */
 	lat: number;
 	lng: number;
-	subway: string;
+	subwayLines: SubwayLine[];
+	/** 호선 배지 뒤에 표시할 안내 문구 */
+	subwayDetail: string;
 	busGroups: BusGroup[];
 }
 
@@ -170,6 +183,10 @@ export interface Guestbook {
 	label: string;
 	title: string;
 	description?: string;
+	/** 처음 보여줄 개수 */
+	initialCount: number;
+	/** 더보기 클릭 시 추가로 불러올 개수 */
+	loadMoreCount: number;
 }
 
 export interface Share {

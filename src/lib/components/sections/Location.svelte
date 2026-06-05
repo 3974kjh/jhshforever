@@ -6,6 +6,8 @@
 
 	const l = content.location;
 	let copied = $state(false);
+	const subwayLines = l.subwayLines.map((line) => `${line.number}호선`).join(', ');
+	const [subwayLead, ...subwayTail] = l.subwayDetail.split('\n');
 
 	const name = encodeURIComponent(l.hallName);
 	const navLinks = [
@@ -26,7 +28,7 @@
 		try {
 			await navigator.clipboard.writeText(l.roadAddress);
 			copied = true;
-			setTimeout(() => (copied = false), 1500);
+			setTimeout(() => (copied = false), 900);
 		} catch {
 			copied = false;
 		}
@@ -37,10 +39,14 @@
 	<SectionHeading label={l.label} title={l.title} />
 
 	<div class="hall">
-		<h3>{l.hallName}</h3>
+		<h3>
+			{l.hallName}
+			{#if l.hallRoom}
+				<span class="hall-room">{l.hallRoom}</span>
+			{/if}
+		</h3>
 		{#if l.hallDetail}<p class="detail">{l.hallDetail}</p>{/if}
 		<p class="time">예식 {l.weddingTime}</p>
-		{#if l.tel}<p class="tel">Tel. {l.tel}</p>{/if}
 	</div>
 
 	<NaverMap lat={l.lat} lng={l.lng} label={l.hallName} />
@@ -58,8 +64,30 @@
 			<span class="tag">우편</span>
 			<p>{l.zipcode}</p>
 		</div>
-		<button class="copy-addr" onclick={copyAddress}>
-			{copied ? '주소가 복사되었습니다' : '주소 복사하기'}
+		<button
+			class="copy-addr"
+			onclick={copyAddress}
+			aria-label={copied ? '주소 복사 완료' : '주소 복사하기'}
+		>
+			<span class="copy-inner">
+				<span class="copy-layer default" class:inactive={copied} aria-hidden={copied}>
+					<svg class="copy-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+						<path
+							d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H10V7h9v14z"
+							fill="currentColor"
+						/>
+					</svg>
+					<span>주소 복사하기</span>
+				</span>
+				<span class="copy-layer done" class:active={copied} aria-hidden={!copied}>
+					<svg class="copy-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+						<path
+							d="M9.2 16.6 4.9 12.3l1.4-1.4 2.9 2.9 8.5-8.5 1.4 1.4z"
+							fill="currentColor"
+						/>
+					</svg>
+				</span>
+			</span>
 		</button>
 	</div>
 
@@ -80,7 +108,37 @@
 		</div>
 		<div class="t-block">
 			<h4>지하철</h4>
-			<p class="pre">{l.subway}</p>
+			<p class="subway-lead">
+				<span class="line-badges" role="img" aria-label={subwayLines}>
+					{#each l.subwayLines as line (line.number)}
+						<svg
+							class="line-badge"
+							viewBox="0 0 20 20"
+							width="17"
+							height="17"
+							aria-hidden="true"
+						>
+							<circle cx="10" cy="10" r="10" fill={line.color} />
+							<text
+								x="10"
+								y="10"
+								text-anchor="middle"
+								dominant-baseline="central"
+								fill="#fff"
+								font-size="11"
+								font-weight="700"
+								font-family="'Noto Sans KR', sans-serif"
+							>
+								{line.number}
+							</text>
+						</svg>
+					{/each}
+				</span>
+				{subwayLead}
+			</p>
+			{#each subwayTail as line, i (i)}
+				<p class="subway-tail pre">{line}</p>
+			{/each}
 		</div>
 		<div class="t-block">
 			<h4>버스</h4>
@@ -105,6 +163,18 @@
 		font-weight: 700;
 		color: var(--color-ink);
 	}
+	.hall-room {
+		display: inline-block;
+		margin-left: 0.35rem;
+		padding: 0.05rem 0.45rem;
+		border: 1px solid var(--color-line);
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-family: var(--font-sans);
+		color: var(--color-ink-soft);
+		background: var(--color-paper-dim);
+		vertical-align: middle;
+	}
 	.hall .detail {
 		margin-top: 0.4rem;
 		color: var(--color-ink-soft);
@@ -114,11 +184,6 @@
 		margin-top: 0.7rem;
 		color: var(--color-accent);
 		font-size: 0.92rem;
-	}
-	.hall .tel {
-		margin-top: 0.3rem;
-		color: var(--color-ink-mute);
-		font-size: 0.85rem;
 	}
 	.address {
 		margin-top: 1.4rem;
@@ -146,6 +211,60 @@
 		color: var(--color-accent);
 		font-size: 0.9rem;
 		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 44px;
+	}
+	.copy-inner {
+		display: grid;
+		place-items: center;
+		min-width: 7.5rem;
+	}
+	.copy-layer {
+		grid-area: 1 / 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.38rem;
+	}
+	.copy-layer.default {
+		transition: opacity 0.2s ease;
+	}
+	.copy-layer.default.inactive {
+		opacity: 0;
+	}
+	.copy-layer.done {
+		opacity: 0;
+	}
+	.copy-layer.done.active {
+		animation: copyFeedback 0.9s ease forwards;
+	}
+	.copy-icon {
+		flex-shrink: 0;
+	}
+	@keyframes copyFeedback {
+		0% {
+			opacity: 0;
+		}
+		18% {
+			opacity: 1;
+		}
+		82% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.copy-layer.default {
+			transition: none;
+		}
+		.copy-layer.done.active {
+			animation: none;
+			opacity: 1;
+		}
 	}
 	.nav {
 		margin-top: 2.2rem;
@@ -189,6 +308,30 @@
 	}
 	.t-block .pre {
 		white-space: pre-line;
+	}
+	.subway-lead {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		font-size: 0.88rem;
+		color: var(--color-ink-soft);
+		line-height: 1.7;
+	}
+	.line-badges {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.32rem;
+		flex-shrink: 0;
+	}
+	.line-badge {
+		flex-shrink: 0;
+		display: block;
+	}
+	.subway-tail {
+		margin-top: 0.35rem;
+		font-size: 0.88rem;
+		color: var(--color-ink-soft);
+		line-height: 1.7;
 	}
 	.bus-label {
 		color: var(--color-accent);

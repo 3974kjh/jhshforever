@@ -1,32 +1,18 @@
-import { json, error } from '@sveltejs/kit';
-import bcrypt from 'bcryptjs';
-import { getAdminClient } from '$lib/server/supabase';
+import { error } from '@sveltejs/kit';
+import { deleteGuestbookEntryById } from '$lib/server/guestbook-delete';
 import type { RequestHandler } from './$types';
 
-const TABLE = 'guestbook';
-
-// 방명록 삭제 (비밀번호 검증)
-export const DELETE: RequestHandler = async ({ params, request }) => {
-	const supabase = getAdminClient();
-	if (!supabase) throw error(503, '방명록이 아직 설정되지 않았습니다.');
-
+async function readPassword(request: Request) {
 	const body = await request.json().catch(() => null);
-	const password = typeof body?.password === 'string' ? body.password : '';
-	if (!password) throw error(400, '비밀번호를 입력해주세요.');
+	return body?.password;
+}
 
-	const { data: row, error: fetchError } = await supabase
-		.from(TABLE)
-		.select('id, password_hash')
-		.eq('id', params.id)
-		.single();
+// DELETE 본문이 중간에서 제거되는 환경이 있어 POST(action=delete)도 지원합니다.
+export const DELETE: RequestHandler = async ({ params, request }) =>
+	deleteGuestbookEntryById(params.id, await readPassword(request));
 
-	if (fetchError || !row) throw error(404, '존재하지 않는 글입니다.');
-
-	const ok = await bcrypt.compare(password, row.password_hash as string);
-	if (!ok) throw error(403, '비밀번호가 일치하지 않습니다.');
-
-	const { error: deleteError } = await supabase.from(TABLE).delete().eq('id', params.id);
-	if (deleteError) throw error(500, '삭제에 실패했습니다.');
-
-	return json({ success: true });
+export const POST: RequestHandler = async ({ params, request }) => {
+	const body = await request.json().catch(() => null);
+	if (body?.action !== 'delete') throw error(400, '잘못된 요청입니다.');
+	return deleteGuestbookEntryById(params.id, body.password);
 };

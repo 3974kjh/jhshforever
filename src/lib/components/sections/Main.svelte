@@ -26,6 +26,9 @@
 			<span class="bar"></span>
 		</div>
 		<p class="date">{m.dateText} · {m.subText}</p>
+		{#if m.hallHighlight}
+			<p class="hall-highlight">{m.hallHighlight}</p>
+		{/if}
 	</div>
 </section>
 
@@ -130,5 +133,14 @@
 		font-size: 0.92rem;
 		letter-spacing: 0.18em;
 		opacity: 0.92;
+	}
+	.hall-highlight {
+		margin-top: 0.45rem;
+		font-family: var(--font-serif);
+		font-size: 1.03rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		color: #fff;
+		text-shadow: 0 3px 10px rgba(0, 0, 0, 0.38);
 	}
 </style>

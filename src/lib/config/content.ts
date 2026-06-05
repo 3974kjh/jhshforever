@@ -17,10 +17,11 @@ const GALLERY_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
 export const content: InvitationContent = {
 	main: {
 		groom: { ko: '김준형', en: 'Junhyung' },
-		bride: { ko: '박소현', en: 'Soohyun' },
+		bride: { ko: '박소현', en: 'Sohyun' },
 		dateText: '2027. 02. 28',
 		subText: 'SUN 12:20 PM',
 		image: '/photos/optimized/hero.jpeg',
+		hallHighlight: '웨스턴베니비스 신도림',
 		badge: 'Forever'
 	},
 
@@ -177,6 +178,7 @@ export const content: InvitationContent = {
 		label: 'LOCATION',
 		title: '오시는 길',
 		hallName: '웨스턴베니비스 신도림',
+		hallRoom: '그레이스홀',
 		hallDetail: '신도림테크노마트 7층',
 		roadAddress: '서울 구로구 새말로 97 신도림테크노마트 7층',
 		jibunAddress: '서울 구로구 구로동 3-25 신도림테크노마트 7층',
@@ -186,8 +188,12 @@ export const content: InvitationContent = {
 		tel: '02-000-0000',
 		lat: 37.508725,
 		lng: 126.891306,
-		subway:
-			'1, 2호선 신도림역 2, 3번 출구 도보 1분\n(신도림 테크노마트 판매동 지하 1층과 직접 연결)',
+		subwayLines: [
+			{ number: 1, color: '#0F218B' },
+			{ number: 2, color: '#008837' }
+		],
+		subwayDetail:
+			'신도림역 2, 3번 출구 도보 1분\n(신도림 테크노마트 판매동 지하 1층과 직접 연결)',
 		busGroups: [
 			{ label: '지선버스', numbers: '5619, 6411, 6511, 6512' },
 			{ label: '간선·직행·일반버스', numbers: '160, 600, 662, 10' }
@@ -197,7 +203,9 @@ export const content: InvitationContent = {
 	guestbook: {
 		label: 'GUESTBOOK',
 		title: '방명록',
-		description: '축하의 마음을 남겨주세요.'
+		description: '축하의 마음을 남겨주세요.',
+		initialCount: 5,
+		loadMoreCount: 5
 	},
 
 	account: {

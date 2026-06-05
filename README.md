@@ -55,6 +55,19 @@ pnpm photos:assets
 
 원본을 추가·교체한 뒤 위 명령을 다시 실행하고, `src/lib/config/content.ts`의 경로가 `/photos/optimized/…`를 가리키는지 확인하세요.
 
+## Guestbook setup checklist
+
+방명록 저장이 안 될 때는 아래 순서대로 확인하세요.
+
+1. Supabase SQL Editor에서 `supabase/schema.sql`을 실행해 `guestbook` 테이블/정책을 생성합니다.
+2. Cloudflare Pages 환경 변수(Production + Preview)에 아래 값을 모두 등록합니다.
+   - `PUBLIC_SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY` (Secret 권장)
+3. 로컬 개발 시에는 `.env.example`을 복사해 `.env`를 만들고 같은 키를 채웁니다.
+4. 배포 후 브라우저 Network 탭에서 `POST /api/guestbook` 상태 코드를 확인합니다.
+   - `503`: 환경 변수 누락
+   - `500`: DB 스키마/권한 또는 Supabase 연결 이슈
+
 ## Building
 
 To create a production version of your app:
