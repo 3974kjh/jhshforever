@@ -137,8 +137,8 @@
 	.hall-highlight {
 		margin-top: 0.45rem;
 		font-family: var(--font-serif);
-		font-size: 1.03rem;
-		font-weight: 700;
+		font-size: 0.92rem;
+		font-weight: 600;
 		letter-spacing: 0.08em;
 		color: #fff;
 		text-shadow: 0 3px 10px rgba(0, 0, 0, 0.38);

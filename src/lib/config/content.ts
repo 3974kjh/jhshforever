@@ -21,7 +21,7 @@ export const content: InvitationContent = {
 		dateText: '2027. 02. 28',
 		subText: 'SUN 12:20 PM',
 		image: '/photos/optimized/hero.jpeg',
-		hallHighlight: '웨스턴베니비스 신도림',
+		hallHighlight: '웨스턴베니비스 신도림 · 그레이스홀',
 		badge: 'Forever'
 	},
 
@@ -244,7 +244,7 @@ export const content: InvitationContent = {
 
 	share: {
 		title: '준형 ♥ 소현 결혼합니다',
-		description: '2027. 02. 28 (일) 오후 12시 20분 · 웨스턴베니비스 신도림',
+		description: '2027.02.28(일) 12:20PM · 웨스턴베니비스 신도림 그레이스홀',
 		image: '/photos/optimized/hero.jpeg'
 	},
 
