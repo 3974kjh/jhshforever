@@ -1,16 +1,69 @@
 <script lang="ts">
+	import type { Action } from 'svelte/action';
 	import { content } from '$lib/config/content';
 	import { reveal } from '$lib/actions/reveal';
 	import { slide } from 'svelte/transition';
 	import SectionHeading from '$lib/components/ui/SectionHeading.svelte';
 
 	const a = content.account;
-	let openIndex = $state<number | null>(null);
+	let openGroups = $state<Set<number>>(new Set());
 	let copiedKey = $state<string | null>(null);
 
-	function toggle(i: number) {
-		openIndex = openIndex === i ? null : i;
+	const AUTO_EXPAND_INITIAL_MS = 350;
+	const AUTO_EXPAND_STAGGER_MS = 450;
+
+	let autoExpanded = false;
+
+	function isOpen(i: number) {
+		return openGroups.has(i);
 	}
+
+	function toggle(i: number) {
+		const next = new Set(openGroups);
+		if (next.has(i)) {
+			next.delete(i);
+		} else {
+			next.add(i);
+		}
+		openGroups = next;
+	}
+
+	function openGroup(i: number) {
+		if (openGroups.has(i)) return;
+		openGroups = new Set([...openGroups, i]);
+	}
+
+	async function expandGroupsSequentially() {
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const stagger = reduceMotion ? 0 : AUTO_EXPAND_STAGGER_MS;
+		const initial = reduceMotion ? 0 : AUTO_EXPAND_INITIAL_MS;
+
+		for (let i = 0; i < a.groups.length; i++) {
+			if (i === 0 && initial > 0) {
+				await new Promise((r) => setTimeout(r, initial));
+			} else if (i > 0 && stagger > 0) {
+				await new Promise((r) => setTimeout(r, stagger));
+			}
+			openGroup(i);
+		}
+	}
+
+	const expandOnView: Action<HTMLElement> = (node) => {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting && !autoExpanded) {
+						autoExpanded = true;
+						expandGroupsSequentially();
+						observer.unobserve(node);
+					}
+				}
+			},
+			{ threshold: 0.15 }
+		);
+		observer.observe(node);
+		return { destroy: () => observer.disconnect() };
+	};
 
 	const SCROLL_EXTRA_PX = 80;
 
@@ -39,14 +92,14 @@
 		<p class="desc">{a.description}</p>
 	{/if}
 
-	<div class="groups">
+	<div class="groups" use:expandOnView>
 		{#each a.groups as group, i (i)}
 			<div class="group">
-				<button class="group-head" onclick={() => toggle(i)} aria-expanded={openIndex === i}>
+				<button class="group-head" onclick={() => toggle(i)} aria-expanded={isOpen(i)}>
 					<span>{group.label}</span>
-					<span class="chevron" class:open={openIndex === i}>⌄</span>
+					<span class="chevron" class:open={isOpen(i)}>⌄</span>
 				</button>
-				{#if openIndex === i}
+				{#if isOpen(i)}
 					<div
 						class="group-body"
 						transition:slide={{ duration: 250 }}

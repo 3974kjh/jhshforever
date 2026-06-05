@@ -11,18 +11,73 @@
 
 	const name = encodeURIComponent(l.hallName);
 	const navLinks = [
-		{ key: 'naver', label: '네이버지도', href: `https://map.naver.com/p/search/${name}` },
-		{
-			key: 'tmap',
-			label: '티맵',
-			href: `tmap://route?goalname=${name}&goalx=${l.lng}&goaly=${l.lat}`
-		},
+		{ key: 'naver', label: '네이버지도', href: `https://map.naver.com/p/search/${name}`, newTab: true },
+		{ key: 'tmap', label: '티맵', newTab: false },
 		{
 			key: 'kakao',
 			label: '카카오맵',
-			href: `https://map.kakao.com/link/to/${name},${l.lat},${l.lng}`
+			href: `https://map.kakao.com/link/to/${name},${l.lat},${l.lng}`,
+			newTab: true
 		}
 	];
+
+	const tmapHrefAndroid = `tmap://route?referrer=com.skt.Tmap&goalname=${name}&goalx=${l.lng}&goaly=${l.lat}`;
+	const tmapHrefIos = `tmap://route?rGoName=${name}&rGoX=${l.lng}&rGoY=${l.lat}`;
+	const tmapStoreAndroid =
+		'https://play.google.com/store/apps/details?id=com.skt.tmap.ku&hl=ko';
+	const tmapStoreIos = 'https://apps.apple.com/app/id431589174';
+
+	const TMAP_FALLBACK_MS = 1800;
+
+	function isIOS() {
+		return typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+	}
+
+	function isMobile() {
+		return (
+			typeof navigator !== 'undefined' &&
+			(/Android/i.test(navigator.userAgent) || isIOS())
+		);
+	}
+
+	function buildTmapHref() {
+		if (typeof navigator === 'undefined') return tmapHrefAndroid;
+		return isIOS() ? tmapHrefIos : tmapHrefAndroid;
+	}
+
+	function getTmapStoreUrl() {
+		return isIOS() ? tmapStoreIos : tmapStoreAndroid;
+	}
+
+	function openTmap(e: MouseEvent) {
+		e.preventDefault();
+
+		const storeUrl = getTmapStoreUrl();
+		if (!isMobile()) {
+			window.open(storeUrl, '_blank', 'noopener,noreferrer');
+			return;
+		}
+
+		let appOpened = false;
+		const markOpened = () => {
+			appOpened = true;
+		};
+
+		document.addEventListener('visibilitychange', markOpened);
+		window.addEventListener('pagehide', markOpened);
+		window.addEventListener('blur', markOpened);
+
+		window.location.href = buildTmapHref();
+
+		setTimeout(() => {
+			document.removeEventListener('visibilitychange', markOpened);
+			window.removeEventListener('pagehide', markOpened);
+			window.removeEventListener('blur', markOpened);
+			if (!appOpened) {
+				window.location.href = storeUrl;
+			}
+		}, TMAP_FALLBACK_MS);
+	}
 
 	async function copyAddress() {
 		try {
@@ -95,8 +150,12 @@
 		<p class="nav-title">내비게이션</p>
 		<div class="nav-btns">
 			{#each navLinks as link (link.key)}
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-				<a href={link.href} target="_blank" rel="noopener noreferrer">{link.label}</a>
+				{#if link.key === 'tmap'}
+					<a href={buildTmapHref()} onclick={openTmap}>{link.label}</a>
+				{:else}
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<a href={link.href} target="_blank" rel="noopener noreferrer">{link.label}</a>
+				{/if}
 			{/each}
 		</div>
 	</div>
