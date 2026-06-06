@@ -23,19 +23,29 @@ async function ensureDirs() {
 }
 
 async function listSources() {
-	const entries = await readdir(galleryDir, { withFileTypes: true });
-	return entries
+	const topLevel = await readdir(galleryDir, { withFileTypes: true });
+	const fromRoot = topLevel
 		.filter((e) => e.isFile() && SOURCE_PATTERN.test(e.name))
-		.map((e) => e.name)
-		.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+		.map((e) => ({ name: e.name, dir: galleryDir }));
+
+	if (fromRoot.length > 0) {
+		return fromRoot.sort((a, b) => parseInt(a.name, 10) - parseInt(b.name, 10));
+	}
+
+	const fromFull = await readdir(fullDir, { withFileTypes: true });
+	return fromFull
+		.filter((e) => e.isFile() && SOURCE_PATTERN.test(e.name))
+		.map((e) => ({ name: e.name, dir: fullDir }))
+		.sort((a, b) => parseInt(a.name, 10) - parseInt(b.name, 10));
 }
 
-async function generateFromSource(filename) {
-	const input = join(galleryDir, filename);
-	const base = filename.replace(/\.jpe?g$/i, '');
+async function generateFromSource(source) {
+	const input = join(source.dir, source.name);
+	const base = source.name.replace(/\.jpe?g$/i, '');
 	const thumbJpeg = join(thumbsDir, `${base}.jpeg`);
 	const thumbWebp = join(thumbsDir, `${base}.webp`);
 	const fullJpeg = join(fullDir, `${base}.jpeg`);
+	const fromFull = source.dir === fullDir;
 
 	const rotated = () => sharp(input).rotate();
 
@@ -49,10 +59,12 @@ async function generateFromSource(filename) {
 		.webp({ quality: THUMB_WEBP_QUALITY })
 		.toFile(thumbWebp);
 
-	await rotated()
-		.resize(FULL_MAX, FULL_MAX, { fit: 'inside', withoutEnlargement: true })
-		.jpeg({ quality: FULL_QUALITY, mozjpeg: true })
-		.toFile(fullJpeg);
+	if (!fromFull) {
+		await rotated()
+			.resize(FULL_MAX, FULL_MAX, { fit: 'inside', withoutEnlargement: true })
+			.jpeg({ quality: FULL_QUALITY, mozjpeg: true })
+			.toFile(fullJpeg);
+	}
 
 	const [thumbStat, fullStat] = await Promise.all([
 		sharp(thumbJpeg).metadata(),
@@ -60,7 +72,7 @@ async function generateFromSource(filename) {
 	]);
 
 	console.log(
-		`${filename} → thumb ${thumbStat.width}×${thumbStat.height}, full ${fullStat.width}×${fullStat.height}`
+		`${source.name} → thumb ${thumbStat.width}×${thumbStat.height}, full ${fullStat.width}×${fullStat.height}`
 	);
 }
 
@@ -68,10 +80,12 @@ async function main() {
 	await ensureDirs();
 	const sources = await listSources();
 	if (sources.length === 0) {
-		console.error('No source images found in static/gallery/ (expected N.jpeg at top level).');
+		console.error(
+			'No source images found in static/gallery/ or static/gallery/full/ (expected N.jpeg).'
+		);
 		process.exit(1);
 	}
-	console.log(`Generating thumbs + full for ${sources.length} image(s)...`);
+	console.log(`Generating gallery assets for ${sources.length} image(s)...`);
 	for (const file of sources) {
 		await generateFromSource(file);
 	}

@@ -64,12 +64,12 @@ export const content: InvitationContent = {
 				answers: [
 					{
 						speaker: '신랑 김준형',
-						tag: 'ISTJ',
+						tag: 'INTP',
 						text: '계획은 철저, 감정 표현은 서툴지만 진심은 깊은 사람입니다. 작은 약속도 잊지 않고 챙기고, 묵묵히 행동으로 보여주는 스타일이에요.'
 					},
 					{
 						speaker: '신부 박소현',
-						tag: 'ENFP',
+						tag: 'ESFJ',
 						text: '하루에도 열두 번 웃고 우는 감성 엔진입니다. 유머와 에너지로 분위기를 밝게 만들고, 낭만과 현실을 넘나드는 사람이에요.'
 					}
 				]
@@ -117,7 +117,7 @@ export const content: InvitationContent = {
 				year: '2022',
 				date: '2022.01.26',
 				title: '우리가 처음 만난 날',
-				description: '지인의 모임에서 우연히 마주 앉아\n이야기를 나누기 시작했습니다.',
+				description: '서로의 첫 소개팅으로 우연히 마주 앉아\n이야기를 나누기 시작했습니다.',
 				image: '/photos/optimized/history-2022.jpeg'
 			},
 			{

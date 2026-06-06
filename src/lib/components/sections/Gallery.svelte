@@ -94,8 +94,6 @@
 					<img
 						src={item.thumb}
 						alt={imageAlt(i, item)}
-						width="480"
-						height="480"
 						loading="lazy"
 						decoding="async"
 					/>
@@ -164,6 +162,7 @@
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
+		object-position: center;
 		transition: transform 0.4s ease;
 	}
 	.thumb:active img {
@@ -190,9 +189,8 @@
 		position: fixed;
 		inset: 0;
 		z-index: 90;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		display: grid;
+		place-items: center;
 	}
 	.lb-overlay {
 		position: absolute;
@@ -203,20 +201,26 @@
 	}
 	.lb-stage {
 		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		max-width: 92vw;
-		max-height: 82vh;
+		z-index: 1;
+		flex-shrink: 0;
+		width: min(92vw, calc(100vw - 5.5rem));
+		height: min(78vh, calc(100vh - 7rem));
+		overflow: hidden;
 	}
 	.lb-img {
-		max-width: 92vw;
-		max-height: 82vh;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		max-width: 100%;
+		max-height: 100%;
+		width: auto;
+		height: auto;
 		object-fit: contain;
+		object-position: center;
 		border-radius: 4px;
 	}
 	.lb-placeholder {
-		position: relative;
 		z-index: 0;
 		filter: blur(2px);
 		opacity: 0.85;
@@ -227,9 +231,6 @@
 		pointer-events: none;
 	}
 	.lb-full {
-		position: absolute;
-		inset: 0;
-		margin: auto;
 		z-index: 1;
 		opacity: 0;
 		transition: opacity 0.25s ease;

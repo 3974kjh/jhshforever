@@ -217,22 +217,29 @@
 		margin-bottom: 1.8rem;
 	}
 	.hall h3 {
+		display: inline-flex;
+		align-items: baseline;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 0.35rem;
 		font-family: var(--font-serif);
 		font-size: 1.25rem;
 		font-weight: 700;
 		color: var(--color-ink);
 	}
 	.hall-room {
-		display: inline-block;
-		margin-left: 0.35rem;
+		position: relative;
+		top: -0.2rem;
+		flex-shrink: 0;
 		padding: 0.05rem 0.45rem;
 		border: 1px solid var(--color-line);
 		border-radius: 999px;
 		font-size: 0.72rem;
 		font-family: var(--font-sans);
+		font-weight: 500;
+		line-height: 1.4;
 		color: var(--color-ink-soft);
 		background: var(--color-paper-dim);
-		vertical-align: middle;
 	}
 	.hall .detail {
 		margin-top: 0.4rem;
