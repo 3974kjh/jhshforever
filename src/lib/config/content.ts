@@ -112,6 +112,7 @@ export const content: InvitationContent = {
 		label: 'OUR STORY',
 		title: '만남에서 사랑으로',
 		periodText: '2022.01.26 ~ 2027.02.28',
+		stripHint: '밀어 넘겨보세요',
 		items: [
 			{
 				year: '2022',
@@ -152,7 +153,7 @@ export const content: InvitationContent = {
 				date: '2027.02.28',
 				title: '하나가 되는 날',
 				description: '이제 부부로서\n새로운 이야기를 시작합니다.',
-				image: ''
+				image: '/photos/optimized/history-2027.jpeg'
 			}
 		]
 	},

@@ -85,6 +85,8 @@ export interface History {
 	title: string;
 	/** 전체 기간 표기 (예: 2022.01.26 ~ 2027.02.28) */
 	periodText: string;
+	/** 폴라로이드 스트립 첫 인터랙션 전 힌트 */
+	stripHint: string;
 	items: HistoryItem[];
 }
 
