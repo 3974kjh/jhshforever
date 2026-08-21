@@ -21,3 +21,10 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Gallery source originals (for `npm run gallery:assets` only; do not push)
+# Served assets live under static/gallery/full/ and static/gallery/thumbs/
+/static/gallery/*.jpeg
+/static/gallery/*.jpg
+/static/gallery/*.JPEG
+/static/gallery/*.JPG
