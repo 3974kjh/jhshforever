@@ -9,7 +9,9 @@ function galleryImage(id: number): GalleryImage {
 	};
 }
 
-const GALLERY_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
+const GALLERY_IDS = [
+	1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
+] as const;
 
 // ⬇️ 청첩장에 표시되는 모든 텍스트/이미지/연락처를 이 파일에서 관리합니다.
 //    (인터뷰 / 히스토리 문구는 예시이므로 자유롭게 수정하세요.)

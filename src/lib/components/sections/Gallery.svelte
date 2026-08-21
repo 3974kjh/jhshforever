@@ -104,7 +104,23 @@
 
 	{#if hasMore}
 		<button class="more" onclick={loadMore}>
-			더보기 <span class="chev">⌄</span>
+			<span>더보기</span>
+			<svg
+				class="chev"
+				viewBox="0 0 24 24"
+				width="14"
+				height="14"
+				aria-hidden="true"
+			>
+				<path
+					d="M6 9l6 6 6-6"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				/>
+			</svg>
 		</button>
 	{/if}
 </section>
@@ -172,16 +188,20 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.4rem;
+		gap: 0.35rem;
+		width: fit-content;
 		margin: 1.8rem auto 0;
 		padding: 0.7rem 1.4rem;
 		background: none;
 		border: none;
 		color: var(--color-ink-soft);
 		font-size: 0.92rem;
+		line-height: 1;
 		cursor: pointer;
 	}
 	.chev {
+		display: block;
+		flex-shrink: 0;
 		color: var(--color-ink-mute);
 	}
 
@@ -243,9 +263,14 @@
 		top: 50%;
 		transform: translateY(-50%);
 		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		width: 44px;
 		height: 44px;
+		padding: 0;
 		font-size: 2rem;
+		line-height: 1;
 		color: #fff;
 		background: rgba(255, 255, 255, 0.12);
 		border: none;
@@ -254,16 +279,25 @@
 	}
 	.lb-nav.prev {
 		left: 0.6rem;
+		padding-bottom: 1px;
 	}
 	.lb-nav.next {
 		right: 0.6rem;
+		padding-bottom: 1px;
 	}
 	.lb-close {
 		position: absolute;
-		top: 1rem;
-		right: 1rem;
+		top: 0.75rem;
+		right: 0.75rem;
 		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		padding: 0;
 		font-size: 2rem;
+		line-height: 1;
 		color: #fff;
 		background: none;
 		border: none;
