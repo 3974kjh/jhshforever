@@ -202,8 +202,9 @@
 		scroll-behavior: smooth;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
-		padding: 0.75rem 0 1rem;
-		scroll-padding-inline: calc(50% - min(42vw, 9.5rem));
+		padding-block: 0.75rem 1rem;
+		padding-inline: calc((100% - min(72vw, 17rem)) / 2);
+		scroll-padding-inline: calc((100% - min(72vw, 17rem)) / 2);
 		touch-action: pan-x pan-y;
 	}
 
@@ -228,14 +229,6 @@
 			transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
 			opacity 0.35s ease;
 		user-select: none;
-	}
-
-	.polaroid:first-child {
-		margin-inline-start: calc(50% - min(36vw, 8.5rem));
-	}
-
-	.polaroid:last-child {
-		margin-inline-end: calc(50% - min(36vw, 8.5rem));
 	}
 
 	.polaroid.active {
