@@ -99,6 +99,7 @@
 		font-size: 0.82rem;
 	}
 	.text {
+		white-space: pre-line;
 		color: var(--color-ink-soft);
 		font-size: 0.92rem;
 		line-height: 1.85;
