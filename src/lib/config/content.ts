@@ -90,7 +90,7 @@ export const content: InvitationContent = {
 				answers: [
 					{
 						speaker: '신랑 김준형',
-						text: '차분하고 듬직해서 어떤 어려움도 함께 이겨낼 수 있다는 든든한 믿음이 느껴졌습니다. 가치관이 잘 맞고 함께 있는 것만으로도 늘 웃음이 끊이지 않는 것은 물론 모든 모습이 사랑스럽고 귀여워 보였습니다.'
+						text: '어떤 어려움도 함께 이겨낼 수 있다는 든든한 믿음이 느껴졌습니다. 가치관이 잘 맞고 함께 있는 것만으로도 늘 웃음이 끊이지 않는 것은 물론 모든 모습이 사랑스럽고 귀여워 보였습니다.'
 					},
 					{
 						speaker: '신부 박소현',
@@ -222,7 +222,7 @@ export const content: InvitationContent = {
 					{ role: '신랑 김준형', bank: '국민은행', number: '366902-04-078893', holder: '김준형' },
 					{
 						role: '아버지 김강구',
-						bank: 'IM뱅크(대구은행)',
+						bank: 'IM뱅크(대구)',
 						number: '023-07-020990-3',
 						holder: '김강구'
 					},
@@ -235,11 +235,11 @@ export const content: InvitationContent = {
 					{ role: '신부 박소현', bank: '우리은행', number: '1002-352-642976', holder: '박소현' },
 					{
 						role: '아버지 박성규',
-						bank: '신한은행',
-						number: '000-000000-00-000',
+						bank: '농협은행',
+						number: '352-1037-3936-33',
 						holder: '박성규'
 					},
-					{ role: '어머니 조후임', bank: '신한은행', number: '000-000000-00-000', holder: '조후임' }
+					{ role: '어머니 조후임', bank: '농협은행', number: '351-0788-5264-33', holder: '조후임' }
 				]
 			}
 		]
