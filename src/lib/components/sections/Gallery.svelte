@@ -77,6 +77,15 @@
 			fullLoaded = true;
 		}
 	});
+
+	$effect(() => {
+		if (lightboxIndex !== null) {
+			document.body.style.overflow = 'hidden';
+			return () => {
+				document.body.style.overflow = '';
+			};
+		}
+	});
 </script>
 
 <svelte:window onkeydown={onKey} />
