@@ -127,7 +127,7 @@
 
 {#if lightboxIndex !== null && activeImage}
 	<div class="lightbox" transition:fade={{ duration: 180 }}>
-		<button class="lb-overlay" aria-label="닫기" onclick={close}></button>
+		<div class="lb-overlay" aria-hidden="true"></div>
 		<button class="lb-nav prev" aria-label="이전" onclick={prev}>‹</button>
 		<div class="lb-stage">
 			<img
@@ -216,8 +216,6 @@
 		position: absolute;
 		inset: 0;
 		background: rgba(0, 0, 0, 0.9);
-		border: none;
-		cursor: pointer;
 	}
 	.lb-stage {
 		position: relative;
