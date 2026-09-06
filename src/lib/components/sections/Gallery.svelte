@@ -13,6 +13,12 @@
 	let lightboxIndex = $state<number | null>(null);
 	let fullLoaded = $state(false);
 	let fullImgEl = $state<HTMLImageElement | null>(null);
+	let lightboxEl = $state<HTMLDivElement | null>(null);
+
+	const SWIPE_THRESHOLD = 50;
+	let swipeStartX = 0;
+	let swipeStartY = 0;
+	let swipeActive = false;
 
 	const activeImage = $derived(lightboxIndex !== null ? g.images[lightboxIndex] : null);
 	const activeFullSrc = $derived(activeImage?.full ?? '');
@@ -46,6 +52,48 @@
 		if (e.key === 'Escape') close();
 		if (e.key === 'ArrowLeft') prev();
 		if (e.key === 'ArrowRight') next();
+	}
+
+	function onTouchStart(e: TouchEvent) {
+		const target = e.target;
+		if (target instanceof Element && target.closest('button')) {
+			swipeActive = false;
+			return;
+		}
+		if (e.touches.length !== 1) {
+			swipeActive = false;
+			e.preventDefault();
+			return;
+		}
+		swipeStartX = e.touches[0].clientX;
+		swipeStartY = e.touches[0].clientY;
+		swipeActive = true;
+	}
+
+	function onTouchMove(e: TouchEvent) {
+		if (e.touches.length > 1) {
+			swipeActive = false;
+			e.preventDefault();
+			return;
+		}
+		if (!swipeActive) return;
+		e.preventDefault();
+	}
+
+	function onTouchEnd(e: TouchEvent) {
+		if (!swipeActive) return;
+		swipeActive = false;
+		const touch = e.changedTouches[0];
+		if (!touch) return;
+		const dx = touch.clientX - swipeStartX;
+		const dy = touch.clientY - swipeStartY;
+		if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
+		if (dx < 0) next();
+		else prev();
+	}
+
+	function onGesture(e: Event) {
+		e.preventDefault();
 	}
 
 	function imageAlt(i: number, item: (typeof g.images)[number]) {
@@ -85,6 +133,26 @@
 				document.body.style.overflow = '';
 			};
 		}
+	});
+
+	$effect(() => {
+		const el = lightboxEl;
+		if (!el) return;
+		const opts: AddEventListenerOptions = { passive: false };
+		el.addEventListener('touchstart', onTouchStart, opts);
+		el.addEventListener('touchmove', onTouchMove, opts);
+		el.addEventListener('touchend', onTouchEnd);
+		el.addEventListener('gesturestart', onGesture, opts);
+		el.addEventListener('gesturechange', onGesture, opts);
+		el.addEventListener('gestureend', onGesture, opts);
+		return () => {
+			el.removeEventListener('touchstart', onTouchStart);
+			el.removeEventListener('touchmove', onTouchMove);
+			el.removeEventListener('touchend', onTouchEnd);
+			el.removeEventListener('gesturestart', onGesture);
+			el.removeEventListener('gesturechange', onGesture);
+			el.removeEventListener('gestureend', onGesture);
+		};
 	});
 </script>
 
@@ -135,7 +203,7 @@
 </section>
 
 {#if lightboxIndex !== null && activeImage}
-	<div class="lightbox" transition:fade={{ duration: 180 }}>
+	<div class="lightbox" bind:this={lightboxEl} transition:fade={{ duration: 180 }}>
 		<div class="lb-overlay" aria-hidden="true"></div>
 		<button class="lb-nav prev" aria-label="이전" onclick={prev}>‹</button>
 		<div class="lb-stage">
@@ -145,6 +213,7 @@
 				src={activeImage.thumb}
 				alt=""
 				aria-hidden="true"
+				draggable="false"
 			/>
 			{#key activeFullSrc}
 				<img
@@ -153,6 +222,7 @@
 					class:lb-visible={fullLoaded}
 					src={activeFullSrc}
 					alt={imageAlt(lightboxIndex, activeImage)}
+					draggable="false"
 					onload={() => (fullLoaded = true)}
 				/>
 			{/key}
@@ -220,11 +290,15 @@
 		z-index: 90;
 		display: grid;
 		place-items: center;
+		touch-action: none;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 	.lb-overlay {
 		position: absolute;
 		inset: 0;
 		background: rgba(0, 0, 0, 0.9);
+		touch-action: none;
 	}
 	.lb-stage {
 		position: relative;
@@ -233,6 +307,7 @@
 		width: min(92vw, calc(100vw - 5.5rem));
 		height: min(78vh, calc(100vh - 7rem));
 		overflow: hidden;
+		touch-action: none;
 	}
 	.lb-img {
 		position: absolute;
@@ -246,6 +321,11 @@
 		object-fit: contain;
 		object-position: center;
 		border-radius: 4px;
+		touch-action: none;
+		user-select: none;
+		-webkit-user-select: none;
+		-webkit-user-drag: none;
+		pointer-events: none;
 	}
 	.lb-placeholder {
 		z-index: 0;
