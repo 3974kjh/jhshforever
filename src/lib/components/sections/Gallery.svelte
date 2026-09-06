@@ -16,9 +16,11 @@
 	let lightboxEl = $state<HTMLDivElement | null>(null);
 
 	const SWIPE_THRESHOLD = 50;
+	const DOUBLE_TAP_MS = 300;
 	let swipeStartX = 0;
 	let swipeStartY = 0;
 	let swipeActive = false;
+	let lastTapAt = 0;
 
 	const activeImage = $derived(lightboxIndex !== null ? g.images[lightboxIndex] : null);
 	const activeFullSrc = $derived(activeImage?.full ?? '');
@@ -65,6 +67,14 @@
 			e.preventDefault();
 			return;
 		}
+		const now = Date.now();
+		if (now - lastTapAt < DOUBLE_TAP_MS) {
+			swipeActive = false;
+			lastTapAt = 0;
+			e.preventDefault();
+			return;
+		}
+		lastTapAt = now;
 		swipeStartX = e.touches[0].clientX;
 		swipeStartY = e.touches[0].clientY;
 		swipeActive = true;
@@ -93,6 +103,10 @@
 	}
 
 	function onGesture(e: Event) {
+		e.preventDefault();
+	}
+
+	function onDblClick(e: Event) {
 		e.preventDefault();
 	}
 
@@ -142,6 +156,7 @@
 		el.addEventListener('touchstart', onTouchStart, opts);
 		el.addEventListener('touchmove', onTouchMove, opts);
 		el.addEventListener('touchend', onTouchEnd);
+		el.addEventListener('dblclick', onDblClick, opts);
 		el.addEventListener('gesturestart', onGesture, opts);
 		el.addEventListener('gesturechange', onGesture, opts);
 		el.addEventListener('gestureend', onGesture, opts);
@@ -149,6 +164,7 @@
 			el.removeEventListener('touchstart', onTouchStart);
 			el.removeEventListener('touchmove', onTouchMove);
 			el.removeEventListener('touchend', onTouchEnd);
+			el.removeEventListener('dblclick', onDblClick);
 			el.removeEventListener('gesturestart', onGesture);
 			el.removeEventListener('gesturechange', onGesture);
 			el.removeEventListener('gestureend', onGesture);
