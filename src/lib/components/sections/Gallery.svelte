@@ -117,6 +117,10 @@
 	function wantsFull(index: number) {
 		return Math.abs(index - viewIndex) <= 2;
 	}
+	const windowReady = $derived.by(() => {
+		if (lightboxIndex === null) return false;
+		return windowIndices(lightboxIndex).every((index) => fullReady[g.images[index].full]);
+	});
 	function syncIndexFromScroll() {
 		const track = trackEl;
 		if (!track || !trackReady) return;
@@ -135,22 +139,17 @@
 		}
 		viewIndex = best;
 	}
-	let openSeq = 0;
-	async function openAt(i: number) {
-		const seq = ++openSeq;
-		await Promise.all(windowIndices(i).map((index) => decodeFull(g.images[index].full)));
-		if (seq !== openSeq) return;
+	function openAt(i: number) {
 		viewIndex = i;
 		lightboxIndex = i;
 	}
 	function close() {
-		openSeq += 1;
 		prefetchGen += 1;
 		lightboxIndex = null;
 	}
 	function goTo(index: number) {
 		const next = Math.max(0, Math.min(g.images.length - 1, index));
-		if (lightboxIndex === null || next === viewIndex) return;
+		if (!windowReady || lightboxIndex === null || next === viewIndex) return;
 		scrollToIndex(next);
 	}
 	function goPrev() {
@@ -162,6 +161,7 @@
 	function onKey(e: KeyboardEvent) {
 		if (lightboxIndex === null) return;
 		if (e.key === 'Escape') close();
+		if (!windowReady) return;
 		if (e.key === 'ArrowLeft') goPrev();
 		if (e.key === 'ArrowRight') goNext();
 	}
@@ -240,45 +240,53 @@
 {#if lightboxIndex !== null}
 	<div class="lightbox" transition:fade={{ duration: 180 }}>
 		<div class="lb-overlay" aria-hidden="true"></div>
-		<div
-			class="lb-track"
-			class:ready={trackReady}
-			bind:this={trackEl}
-			use:placeOpen
-			onscroll={syncIndexFromScroll}
-			role="list"
-			aria-label="웨딩 갤러리"
-		>
-			{#each g.images as item, i (item.full)}
-				<div class="lb-slide" class:active={i === viewIndex} role="listitem">
-					<img
-						class="lb-img lb-placeholder"
-						class:lb-hidden={fullReady[item.full]}
-						src={item.thumb}
-						alt=""
-						aria-hidden="true"
-						draggable="false"
-					/>
-					{#if wantsFull(i)}
+		{#if windowReady}
+			<div
+				class="lb-track"
+				class:ready={trackReady}
+				bind:this={trackEl}
+				use:placeOpen
+				onscroll={syncIndexFromScroll}
+				role="list"
+				aria-label="웨딩 갤러리"
+			>
+				{#each g.images as item, i (item.full)}
+					<div class="lb-slide" class:active={i === viewIndex} role="listitem">
 						<img
-							use:watchFull={item.full}
-							class="lb-img lb-full"
-							class:lb-visible={fullReady[item.full]}
-							src={item.full}
-							alt={imageAlt(i, item)}
+							class="lb-img lb-placeholder"
+							class:lb-hidden={fullReady[item.full]}
+							src={item.thumb}
+							alt=""
+							aria-hidden="true"
 							draggable="false"
 						/>
-					{/if}
-				</div>
-			{/each}
-		</div>
-		<button class="lb-nav prev" aria-label="이전" onclick={goPrev} disabled={viewIndex === 0}>‹</button>
-		<button
-			class="lb-nav next"
-			aria-label="다음"
-			onclick={goNext}
-			disabled={viewIndex === g.images.length - 1}>›</button
-		>
+						{#if wantsFull(i)}
+							<img
+								use:watchFull={item.full}
+								class="lb-img lb-full"
+								class:lb-visible={fullReady[item.full]}
+								src={item.full}
+								alt={imageAlt(i, item)}
+								draggable="false"
+							/>
+						{/if}
+					</div>
+				{/each}
+			</div>
+			<button class="lb-nav prev" aria-label="이전" onclick={goPrev} disabled={viewIndex === 0}>‹</button>
+			<button
+				class="lb-nav next"
+				aria-label="다음"
+				onclick={goNext}
+				disabled={viewIndex === g.images.length - 1}>›</button
+			>
+		{:else}
+			<div class="lb-dots" role="status" aria-label="사진을 불러오는 중">
+				<span></span>
+				<span></span>
+				<span></span>
+			</div>
+		{/if}
 		<button class="lb-close" aria-label="닫기" onclick={close}>×</button>
 		<span class="lb-count">{viewIndex + 1} / {g.images.length}</span>
 	</div>
@@ -345,6 +353,43 @@
 		position: absolute;
 		inset: 0;
 		background: rgba(0, 0, 0, 0.9);
+	}
+	.lb-dots {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.55rem;
+	}
+	.lb-dots span {
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 999px;
+		background: var(--color-paper);
+		animation: lb-dot 0.9s ease-in-out infinite;
+	}
+	.lb-dots span:nth-child(2) {
+		animation-delay: 0.15s;
+	}
+	.lb-dots span:nth-child(3) {
+		animation-delay: 0.3s;
+	}
+	@keyframes lb-dot {
+		0%,
+		80%,
+		100% {
+			transform: translateY(0);
+		}
+		40% {
+			transform: translateY(0.45rem);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.lb-dots span {
+			animation: none;
+		}
 	}
 	.lb-track {
 		position: absolute;
