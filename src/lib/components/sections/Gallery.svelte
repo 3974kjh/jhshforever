@@ -3,6 +3,7 @@
 	import { reveal } from '$lib/actions/reveal';
 	import SectionHeading from '$lib/components/ui/SectionHeading.svelte';
 	import { fade } from 'svelte/transition';
+	import { untrack } from 'svelte';
 
 	const g = content.gallery;
 
@@ -88,16 +89,33 @@
 		decoding.set(src, task);
 		return task;
 	}
-	function prepareWindow(index: number) {
-		return Promise.all(windowIndices(index).map((i) => decodeFull(g.images[i].full))).then(
-			() => undefined
-		);
+	const PREFETCH_LIMIT = 3;
+	let prefetchGen = 0;
+	function prefetchFrom(index: number) {
+		const gen = ++prefetchGen;
+		const priority = new Set(windowIndices(index));
+		const run = async () => {
+			await Promise.all([...priority].map((i) => decodeFull(g.images[i].full)));
+			if (gen !== prefetchGen || lightboxIndex === null) return;
+			const rest = g.images
+				.map((_, i) => i)
+				.filter((i) => !priority.has(i))
+				.sort((a, b) => Math.abs(a - index) - Math.abs(b - index));
+			let cursor = 0;
+			const worker = async () => {
+				while (cursor < rest.length) {
+					if (gen !== prefetchGen || lightboxIndex === null) return;
+					const i = rest[cursor++];
+					await decodeFull(g.images[i].full);
+				}
+			};
+			const workers = Math.min(PREFETCH_LIMIT, rest.length);
+			await Promise.all(Array.from({ length: workers }, () => worker()));
+		};
+		return run();
 	}
-	function prepareAll() {
-		return Promise.all(g.images.map((item) => decodeFull(item.full))).then(() => undefined);
-	}
-	function wantsFull(index: number, src: string) {
-		return fullReady[src] || Math.abs(index - viewIndex) <= 2;
+	function wantsFull(index: number) {
+		return Math.abs(index - viewIndex) <= 2;
 	}
 	function syncIndexFromScroll() {
 		const track = trackEl;
@@ -117,28 +135,17 @@
 		}
 		viewIndex = best;
 	}
-	let openSeq = 0;
-	async function openAt(i: number) {
-		const seq = ++openSeq;
-		await prepareAll();
-		if (seq !== openSeq) return;
+	function openAt(i: number) {
 		viewIndex = i;
 		lightboxIndex = i;
 	}
 	function close() {
-		openSeq += 1;
+		prefetchGen += 1;
 		lightboxIndex = null;
 	}
-	function windowReady(index: number) {
-		return windowIndices(index).every((i) => fullReady[g.images[i].full]);
-	}
-	let moveSeq = 0;
-	async function goTo(index: number) {
+	function goTo(index: number) {
 		const next = Math.max(0, Math.min(g.images.length - 1, index));
 		if (lightboxIndex === null || next === viewIndex) return;
-		const seq = ++moveSeq;
-		if (!windowReady(next)) await prepareWindow(next);
-		if (seq !== moveSeq || lightboxIndex === null) return;
 		scrollToIndex(next);
 	}
 	function goPrev() {
@@ -182,7 +189,10 @@
 
 	$effect(() => {
 		if (lightboxIndex === null) return;
-		void prepareWindow(viewIndex);
+		const index = viewIndex;
+		untrack(() => {
+			void prefetchFrom(index);
+		});
 	});
 
 </script>
@@ -244,7 +254,7 @@
 						aria-hidden="true"
 						draggable="false"
 					/>
-					{#if wantsFull(i, item.full)}
+					{#if wantsFull(i)}
 						<img
 							use:watchFull={item.full}
 							class="lb-img lb-full"
