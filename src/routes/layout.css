@@ -26,6 +26,9 @@
 html,
 body {
 	background-color: #e9e6e1;
+	touch-action: manipulation;
+	overflow-x: hidden;
+	max-width: 100%;
 }
 
 body {
@@ -41,7 +44,7 @@ body {
 	max-width: 460px;
 	margin: 0 auto;
 	background-color: var(--color-paper);
-	min-height: 100vh;
+	min-height: 100svh;
 	box-shadow: 0 0 60px rgba(0, 0, 0, 0.06);
 	overflow-x: hidden;
 }

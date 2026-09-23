@@ -36,7 +36,7 @@
 	.hero {
 		position: relative;
 		height: 100svh;
-		min-height: 560px;
+		min-height: min(560px, 100svh);
 		background-size: cover;
 		background-position: center;
 		display: flex;
