@@ -16,6 +16,7 @@
 	let trackEl = $state<HTMLDivElement | null>(null);
 	let trackReady = $state(false);
 	let fullReady = $state<Record<string, boolean>>({});
+	let painted = $state<Record<string, boolean>>({});
 
 	function loadMore() {
 		visibleCount = Math.min(visibleCount + g.loadMoreCount, g.images.length);
@@ -119,7 +120,7 @@
 	}
 	const windowReady = $derived.by(() => {
 		if (lightboxIndex === null) return false;
-		return windowIndices(lightboxIndex).every((index) => fullReady[g.images[index].full]);
+		return windowIndices(lightboxIndex).every((index) => painted[g.images[index].full]);
 	});
 	function syncIndexFromScroll() {
 		const track = trackEl;
@@ -171,14 +172,30 @@
 	}
 
 	function watchFull(node: HTMLImageElement, src: string) {
+		let settled = false;
 		const show = () => {
+			if (settled || node.naturalWidth <= 0) return;
+			settled = true;
 			if (!fullReady[src]) fullReady[src] = true;
+			requestAnimationFrame(() => {
+				if (!painted[src]) painted[src] = true;
+			});
 		};
-		if (node.complete && node.naturalWidth > 0) show();
+		const fail = () => {
+			if (settled) return;
+			settled = true;
+			if (!painted[src]) painted[src] = true;
+		};
+		if (node.complete) {
+			if (node.naturalWidth > 0) show();
+			else fail();
+		}
 		node.addEventListener('load', show);
+		node.addEventListener('error', fail);
 		return {
 			destroy() {
 				node.removeEventListener('load', show);
+				node.removeEventListener('error', fail);
 			}
 		};
 	}
@@ -240,39 +257,40 @@
 {#if lightboxIndex !== null}
 	<div class="lightbox" transition:fade={{ duration: 180 }}>
 		<div class="lb-overlay" aria-hidden="true"></div>
-		{#if windowReady}
-			<div
-				class="lb-track"
-				class:ready={trackReady}
-				bind:this={trackEl}
-				use:placeOpen
-				onscroll={syncIndexFromScroll}
-				role="list"
-				aria-label="웨딩 갤러리"
-			>
-				{#each g.images as item, i (item.full)}
-					<div class="lb-slide" class:active={i === viewIndex} role="listitem">
+		<div
+			class="lb-track"
+			class:ready={trackReady}
+			class:revealed={windowReady}
+			bind:this={trackEl}
+			use:placeOpen
+			onscroll={syncIndexFromScroll}
+			role="list"
+			aria-label="웨딩 갤러리"
+		>
+			{#each g.images as item, i (item.full)}
+				<div class="lb-slide" class:active={i === viewIndex} role="listitem">
+					<img
+						class="lb-img lb-placeholder"
+						class:lb-hidden={fullReady[item.full]}
+						src={item.thumb}
+						alt=""
+						aria-hidden="true"
+						draggable="false"
+					/>
+					{#if wantsFull(i)}
 						<img
-							class="lb-img lb-placeholder"
-							class:lb-hidden={fullReady[item.full]}
-							src={item.thumb}
-							alt=""
-							aria-hidden="true"
+							use:watchFull={item.full}
+							class="lb-img lb-full"
+							class:lb-visible={fullReady[item.full]}
+							src={item.full}
+							alt={imageAlt(i, item)}
 							draggable="false"
 						/>
-						{#if wantsFull(i)}
-							<img
-								use:watchFull={item.full}
-								class="lb-img lb-full"
-								class:lb-visible={fullReady[item.full]}
-								src={item.full}
-								alt={imageAlt(i, item)}
-								draggable="false"
-							/>
-						{/if}
-					</div>
-				{/each}
-			</div>
+					{/if}
+				</div>
+			{/each}
+		</div>
+		{#if windowReady}
 			<button class="lb-nav prev" aria-label="이전" onclick={goPrev} disabled={viewIndex === 0}>‹</button>
 			<button
 				class="lb-nav next"
@@ -415,7 +433,8 @@
 		padding-inline: calc((100cqi - var(--slide-w)) / 2);
 		scroll-padding-inline: calc((100cqi - var(--slide-w)) / 2);
 	}
-	.lb-track:not(.ready) {
+	.lb-track:not(.ready),
+	.lb-track:not(.revealed) {
 		visibility: hidden;
 	}
 	.lb-track::-webkit-scrollbar {
