@@ -13,6 +13,7 @@
 	let lightboxIndex = $state<number | null>(null);
 	let viewIndex = $state(0);
 	let trackEl = $state<HTMLDivElement | null>(null);
+	let trackReady = $state(false);
 	let slideEls: (HTMLElement | null)[] = [];
 	let fullReady = $state<Record<string, boolean>>({});
 
@@ -28,20 +29,38 @@
 			}
 		};
 	}
+	function scrollTarget(track: HTMLElement, slide: HTMLElement) {
+		return Math.max(0, slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2);
+	}
+	function placeOpen(node: HTMLElement) {
+		const index = lightboxIndex ?? 0;
+		const slide = node.querySelectorAll<HTMLElement>('.lb-slide')[index];
+		if (slide && slide.offsetWidth > 0) {
+			node.scrollTo({ left: scrollTarget(node, slide), behavior: 'instant' });
+		}
+		trackReady = true;
+		return {
+			destroy() {
+				trackReady = false;
+			}
+		};
+	}
 	function scrollToIndex(index: number, behavior: ScrollBehavior = 'smooth') {
 		const track = trackEl;
 		const slide = slideEls[index];
 		if (!track || !slide) return;
 		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		const target = slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2;
 		track.scrollTo({
-			left: Math.max(0, target),
-			behavior: reduced ? 'auto' : behavior
+			left: scrollTarget(track, slide),
+			behavior: reduced ? 'instant' : behavior
 		});
+	}
+	function wantsFull(index: number, src: string) {
+		return fullReady[src] || Math.abs(index - viewIndex) <= 2;
 	}
 	function syncIndexFromScroll() {
 		const track = trackEl;
-		if (!track) return;
+		if (!track || !trackReady) return;
 		const center = track.scrollLeft + track.clientWidth / 2;
 		let best = 0;
 		let bestDist = Infinity;
@@ -80,13 +99,6 @@
 	function imageAlt(i: number, item: (typeof g.images)[number]) {
 		return item.alt ?? `웨딩 사진 ${i + 1}`;
 	}
-
-	$effect(() => {
-		if (lightboxIndex === null || !trackEl) return;
-		const index = lightboxIndex;
-		const frame = requestAnimationFrame(() => scrollToIndex(index, 'auto'));
-		return () => cancelAnimationFrame(frame);
-	});
 
 	function watchFull(node: HTMLImageElement, src: string) {
 		const show = () => {
@@ -152,7 +164,9 @@
 		<div class="lb-overlay" aria-hidden="true"></div>
 		<div
 			class="lb-track"
+			class:ready={trackReady}
 			bind:this={trackEl}
+			use:placeOpen
 			onscroll={syncIndexFromScroll}
 			role="list"
 			aria-label="웨딩 갤러리"
@@ -167,14 +181,16 @@
 						aria-hidden="true"
 						draggable="false"
 					/>
-					<img
-						use:watchFull={item.full}
-						class="lb-img lb-full"
-						class:lb-visible={fullReady[item.full]}
-						src={item.full}
-						alt={imageAlt(i, item)}
-						draggable="false"
-					/>
+					{#if wantsFull(i, item.full)}
+						<img
+							use:watchFull={item.full}
+							class="lb-img lb-full"
+							class:lb-visible={fullReady[item.full]}
+							src={item.full}
+							alt={imageAlt(i, item)}
+							draggable="false"
+						/>
+					{/if}
 				</div>
 			{/each}
 		</div>
@@ -245,6 +261,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 90;
+		container-type: size;
 	}
 	.lb-overlay {
 		position: absolute;
@@ -257,18 +274,26 @@
 		z-index: 1;
 		display: flex;
 		align-items: center;
-		gap: 0.8rem;
 		width: 100%;
 		height: 100%;
 		overflow-x: auto;
 		overflow-y: hidden;
 		scroll-snap-type: x mandatory;
-		scroll-behavior: smooth;
+		scroll-behavior: auto;
 		-webkit-overflow-scrolling: touch;
 		scrollbar-width: none;
 		touch-action: pan-x;
-		padding-inline: calc((100% - min(78%, calc(100% - 6rem))) / 2);
-		scroll-padding-inline: calc((100% - min(78%, calc(100% - 6rem))) / 2);
+		--slide-gap: 0.8rem;
+		gap: var(--slide-gap);
+		--slide-w: min(calc(var(--slide-h) * 2 / 3), calc(100cqi - 5.5rem));
+		--slide-h: min(78cqb, calc(100cqb - 7rem));
+		--clip-side: max(0px, calc((100cqi - (var(--slide-w) * 3 + var(--slide-gap) * 2)) / 2));
+		clip-path: inset(0 var(--clip-side) 0 var(--clip-side));
+		padding-inline: calc((100cqi - var(--slide-w)) / 2);
+		scroll-padding-inline: calc((100cqi - var(--slide-w)) / 2);
+	}
+	.lb-track:not(.ready) {
+		visibility: hidden;
 	}
 	.lb-track::-webkit-scrollbar {
 		display: none;
@@ -276,13 +301,13 @@
 	.lb-slide {
 		position: relative;
 		flex: 0 0 auto;
-		width: min(78%, calc(100% - 6rem));
-		height: min(78svh, calc(100svh - 7rem));
+		width: var(--slide-w);
+		height: var(--slide-h);
 		overflow: hidden;
 		border-radius: 4px;
 		scroll-snap-align: center;
 		scroll-snap-stop: always;
-		transform: scale(0.82);
+		transform: scale(0.92);
 		opacity: 0.55;
 		transition:
 			transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
@@ -298,7 +323,6 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
-		object-fit: contain;
 		object-position: center;
 		user-select: none;
 		-webkit-user-select: none;
@@ -307,6 +331,7 @@
 	}
 	.lb-placeholder {
 		z-index: 0;
+		object-fit: cover;
 		filter: blur(2px);
 		opacity: 0.85;
 		transition: opacity 0.2s ease;
@@ -316,6 +341,7 @@
 	}
 	.lb-full {
 		z-index: 1;
+		object-fit: contain;
 		opacity: 0;
 		transition: opacity 0.25s ease;
 	}
@@ -383,19 +409,9 @@
 	}
 
 	@media (max-width: 820px) {
-		.lightbox {
-			container-type: size;
-		}
 		.lb-track {
-			gap: 0.55rem;
-			--slide-w: calc(100cqi - 0.75rem);
+			--slide-gap: 0.55rem;
 			--slide-h: calc(100cqb - 4.5rem);
-			padding-inline: calc((100cqi - var(--slide-w)) / 2);
-			scroll-padding-inline: calc((100cqi - var(--slide-w)) / 2);
-		}
-		.lb-slide {
-			width: var(--slide-w);
-			height: var(--slide-h);
 		}
 	}
 </style>
