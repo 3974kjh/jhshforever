@@ -29,7 +29,7 @@ export const sectionLayout: SectionConfig[] = [
 	{ type: SectionType.Calendar, visible: true },
 	{ type: SectionType.Gallery, visible: true },
 	{ type: SectionType.Location, visible: true },
-	{ type: SectionType.Guestbook, visible: true },
+	// { type: SectionType.Guestbook, visible: true },
 	{ type: SectionType.Account, visible: true }
 ];
 

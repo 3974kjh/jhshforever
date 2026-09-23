@@ -12,7 +12,7 @@
 	import Calendar from '$lib/components/sections/Calendar.svelte';
 	import Gallery from '$lib/components/sections/Gallery.svelte';
 	import Location from '$lib/components/sections/Location.svelte';
-	import Guestbook from '$lib/components/sections/Guestbook.svelte';
+	// import Guestbook from '$lib/components/sections/Guestbook.svelte';
 	import Account from '$lib/components/sections/Account.svelte';
 
 	import BgmToggle from '$lib/components/ui/BgmToggle.svelte';
@@ -26,7 +26,7 @@
 		[SectionType.Calendar]: Calendar,
 		[SectionType.Gallery]: Gallery,
 		[SectionType.Location]: Location,
-		[SectionType.Guestbook]: Guestbook,
+		// [SectionType.Guestbook]: Guestbook,
 		[SectionType.Account]: Account
 	};
 
