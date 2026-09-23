@@ -96,8 +96,22 @@
 		{#each a.groups as group, i (i)}
 			<div class="group">
 				<button class="group-head" onclick={() => toggle(i)} aria-expanded={isOpen(i)}>
-					<span>{group.label}</span>
-					<span class="chevron" class:open={isOpen(i)}>⌄</span>
+					<span class="group-label">{group.label}</span>
+					<svg
+						class="chevron"
+						class:open={isOpen(i)}
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+					>
+						<path
+							d="M6 9l6 6 6-6"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
 				</button>
 				{#if isOpen(i)}
 					<div
@@ -205,9 +219,17 @@
 		color: var(--color-ink);
 		font-family: var(--font-serif);
 	}
+	.group-label {
+		line-height: 1;
+	}
 	.chevron {
-		transition: transform 0.25s ease;
+		display: block;
+		width: 1em;
+		height: 1em;
+		flex-shrink: 0;
 		color: var(--color-ink-mute);
+		transform-origin: center;
+		transition: transform 0.25s ease;
 	}
 	.chevron.open {
 		transform: rotate(180deg);
