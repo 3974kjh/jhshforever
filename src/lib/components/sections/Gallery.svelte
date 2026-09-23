@@ -135,11 +135,16 @@
 		}
 		viewIndex = best;
 	}
-	function openAt(i: number) {
+	let openSeq = 0;
+	async function openAt(i: number) {
+		const seq = ++openSeq;
+		await Promise.all(windowIndices(i).map((index) => decodeFull(g.images[index].full)));
+		if (seq !== openSeq) return;
 		viewIndex = i;
 		lightboxIndex = i;
 	}
 	function close() {
+		openSeq += 1;
 		prefetchGen += 1;
 		lightboxIndex = null;
 	}
