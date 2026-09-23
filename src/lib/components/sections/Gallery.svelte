@@ -11,134 +11,95 @@
 	const hasMore = $derived(visibleCount < g.images.length);
 
 	let lightboxIndex = $state<number | null>(null);
-	let fullLoaded = $state(false);
-	let fullImgEl = $state<HTMLImageElement | null>(null);
-	let lightboxEl = $state<HTMLDivElement | null>(null);
-
-	const SWIPE_THRESHOLD = 50;
-	const DOUBLE_TAP_MS = 300;
-	let swipeStartX = 0;
-	let swipeStartY = 0;
-	let swipeActive = false;
-	let lastTapAt = 0;
-
-	const activeImage = $derived(lightboxIndex !== null ? g.images[lightboxIndex] : null);
-	const activeFullSrc = $derived(activeImage?.full ?? '');
+	let viewIndex = $state(0);
+	let trackEl = $state<HTMLDivElement | null>(null);
+	let slideEls: (HTMLElement | null)[] = [];
+	let fullReady = $state<Record<string, boolean>>({});
 
 	function loadMore() {
 		visibleCount = Math.min(visibleCount + g.loadMoreCount, g.images.length);
 	}
 
+	function captureSlide(node: HTMLElement, index: number) {
+		slideEls[index] = node;
+		return {
+			destroy() {
+				if (slideEls[index] === node) slideEls[index] = null;
+			}
+		};
+	}
+	function scrollToIndex(index: number, behavior: ScrollBehavior = 'smooth') {
+		const track = trackEl;
+		const slide = slideEls[index];
+		if (!track || !slide) return;
+		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const target = slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2;
+		track.scrollTo({
+			left: Math.max(0, target),
+			behavior: reduced ? 'auto' : behavior
+		});
+	}
+	function syncIndexFromScroll() {
+		const track = trackEl;
+		if (!track) return;
+		const center = track.scrollLeft + track.clientWidth / 2;
+		let best = 0;
+		let bestDist = Infinity;
+		for (let i = 0; i < g.images.length; i++) {
+			const slide = slideEls[i];
+			if (!slide) continue;
+			const mid = slide.offsetLeft + slide.offsetWidth / 2;
+			const dist = Math.abs(mid - center);
+			if (dist < bestDist) {
+				bestDist = dist;
+				best = i;
+			}
+		}
+		viewIndex = best;
+	}
 	function openAt(i: number) {
-		fullLoaded = false;
+		viewIndex = i;
 		lightboxIndex = i;
 	}
 	function close() {
 		lightboxIndex = null;
-		fullLoaded = false;
 	}
-	function prev() {
-		if (lightboxIndex !== null) {
-			fullLoaded = false;
-			lightboxIndex = (lightboxIndex - 1 + g.images.length) % g.images.length;
-		}
+	function goPrev() {
+		scrollToIndex(Math.max(0, viewIndex - 1));
 	}
-	function next() {
-		if (lightboxIndex !== null) {
-			fullLoaded = false;
-			lightboxIndex = (lightboxIndex + 1) % g.images.length;
-		}
+	function goNext() {
+		scrollToIndex(Math.min(g.images.length - 1, viewIndex + 1));
 	}
 	function onKey(e: KeyboardEvent) {
 		if (lightboxIndex === null) return;
 		if (e.key === 'Escape') close();
-		if (e.key === 'ArrowLeft') prev();
-		if (e.key === 'ArrowRight') next();
-	}
-
-	function onTouchStart(e: TouchEvent) {
-		const target = e.target;
-		if (target instanceof Element && target.closest('button')) {
-			swipeActive = false;
-			return;
-		}
-		if (e.touches.length !== 1) {
-			swipeActive = false;
-			e.preventDefault();
-			return;
-		}
-		const now = Date.now();
-		if (now - lastTapAt < DOUBLE_TAP_MS) {
-			swipeActive = false;
-			lastTapAt = 0;
-			e.preventDefault();
-			return;
-		}
-		lastTapAt = now;
-		swipeStartX = e.touches[0].clientX;
-		swipeStartY = e.touches[0].clientY;
-		swipeActive = true;
-	}
-
-	function onTouchMove(e: TouchEvent) {
-		if (e.touches.length > 1) {
-			swipeActive = false;
-			e.preventDefault();
-			return;
-		}
-		if (!swipeActive) return;
-		e.preventDefault();
-	}
-
-	function onTouchEnd(e: TouchEvent) {
-		if (!swipeActive) return;
-		swipeActive = false;
-		const touch = e.changedTouches[0];
-		if (!touch) return;
-		const dx = touch.clientX - swipeStartX;
-		const dy = touch.clientY - swipeStartY;
-		if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
-		if (dx < 0) next();
-		else prev();
-	}
-
-	function onGesture(e: Event) {
-		e.preventDefault();
-	}
-
-	function onDblClick(e: Event) {
-		e.preventDefault();
+		if (e.key === 'ArrowLeft') goPrev();
+		if (e.key === 'ArrowRight') goNext();
 	}
 
 	function imageAlt(i: number, item: (typeof g.images)[number]) {
 		return item.alt ?? `웨딩 사진 ${i + 1}`;
 	}
 
-	function preloadFull(src: string) {
-		const img = new Image();
-		img.src = src;
+	$effect(() => {
+		if (lightboxIndex === null || !trackEl) return;
+		const index = lightboxIndex;
+		const frame = requestAnimationFrame(() => scrollToIndex(index, 'auto'));
+		return () => cancelAnimationFrame(frame);
+	});
+
+	function watchFull(node: HTMLImageElement, src: string) {
+		const show = () => {
+			if (!fullReady[src]) fullReady[src] = true;
+		};
+		if (node.complete && node.naturalWidth > 0) show();
+		node.addEventListener('load', show);
+		return {
+			destroy() {
+				node.removeEventListener('load', show);
+			}
+		};
 	}
-
-	$effect(() => {
-		if (lightboxIndex === null) return;
-		const len = g.images.length;
-		const nextIdx = (lightboxIndex + 1) % len;
-		const prevIdx = (lightboxIndex - 1 + len) % len;
-		preloadFull(g.images[nextIdx].full);
-		preloadFull(g.images[prevIdx].full);
-	});
-
-	$effect(() => {
-		activeFullSrc;
-		fullLoaded = false;
-	});
-
-	$effect(() => {
-		const el = fullImgEl;
-		if (el?.complete && el.naturalWidth > 0) {
-			fullLoaded = true;
-		}
-	});
 
 	$effect(() => {
 		if (lightboxIndex !== null) {
@@ -149,27 +110,6 @@
 		}
 	});
 
-	$effect(() => {
-		const el = lightboxEl;
-		if (!el) return;
-		const opts: AddEventListenerOptions = { passive: false };
-		el.addEventListener('touchstart', onTouchStart, opts);
-		el.addEventListener('touchmove', onTouchMove, opts);
-		el.addEventListener('touchend', onTouchEnd);
-		el.addEventListener('dblclick', onDblClick, opts);
-		el.addEventListener('gesturestart', onGesture, opts);
-		el.addEventListener('gesturechange', onGesture, opts);
-		el.addEventListener('gestureend', onGesture, opts);
-		return () => {
-			el.removeEventListener('touchstart', onTouchStart);
-			el.removeEventListener('touchmove', onTouchMove);
-			el.removeEventListener('touchend', onTouchEnd);
-			el.removeEventListener('dblclick', onDblClick);
-			el.removeEventListener('gesturestart', onGesture);
-			el.removeEventListener('gesturechange', onGesture);
-			el.removeEventListener('gestureend', onGesture);
-		};
-	});
 </script>
 
 <svelte:window onkeydown={onKey} />
@@ -184,12 +124,7 @@
 					{#if item.thumbWebp}
 						<source srcset={item.thumbWebp} type="image/webp" />
 					{/if}
-					<img
-						src={item.thumb}
-						alt={imageAlt(i, item)}
-						loading="lazy"
-						decoding="async"
-					/>
+					<img src={item.thumb} alt={imageAlt(i, item)} loading="lazy" decoding="async" />
 				</picture>
 			</button>
 		{/each}
@@ -198,13 +133,7 @@
 	{#if hasMore}
 		<button class="more" onclick={loadMore}>
 			<span>더보기</span>
-			<svg
-				class="chev"
-				viewBox="0 0 24 24"
-				width="14"
-				height="14"
-				aria-hidden="true"
-			>
+			<svg class="chev" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
 				<path
 					d="M6 9l6 6 6-6"
 					fill="none"
@@ -218,34 +147,46 @@
 	{/if}
 </section>
 
-{#if lightboxIndex !== null && activeImage}
-	<div class="lightbox" bind:this={lightboxEl} transition:fade={{ duration: 180 }}>
+{#if lightboxIndex !== null}
+	<div class="lightbox" transition:fade={{ duration: 180 }}>
 		<div class="lb-overlay" aria-hidden="true"></div>
-		<button class="lb-nav prev" aria-label="이전" onclick={prev}>‹</button>
-		<div class="lb-stage">
-			<img
-				class="lb-img lb-placeholder"
-				class:lb-hidden={fullLoaded}
-				src={activeImage.thumb}
-				alt=""
-				aria-hidden="true"
-				draggable="false"
-			/>
-			{#key activeFullSrc}
-				<img
-					bind:this={fullImgEl}
-					class="lb-img lb-full"
-					class:lb-visible={fullLoaded}
-					src={activeFullSrc}
-					alt={imageAlt(lightboxIndex, activeImage)}
-					draggable="false"
-					onload={() => (fullLoaded = true)}
-				/>
-			{/key}
+		<div
+			class="lb-track"
+			bind:this={trackEl}
+			onscroll={syncIndexFromScroll}
+			role="list"
+			aria-label="웨딩 갤러리"
+		>
+			{#each g.images as item, i (item.full)}
+				<div class="lb-slide" class:active={i === viewIndex} role="listitem" use:captureSlide={i}>
+					<img
+						class="lb-img lb-placeholder"
+						class:lb-hidden={fullReady[item.full]}
+						src={item.thumb}
+						alt=""
+						aria-hidden="true"
+						draggable="false"
+					/>
+					<img
+						use:watchFull={item.full}
+						class="lb-img lb-full"
+						class:lb-visible={fullReady[item.full]}
+						src={item.full}
+						alt={imageAlt(i, item)}
+						draggable="false"
+					/>
+				</div>
+			{/each}
 		</div>
-		<button class="lb-nav next" aria-label="다음" onclick={next}>›</button>
+		<button class="lb-nav prev" aria-label="이전" onclick={goPrev} disabled={viewIndex === 0}>‹</button>
+		<button
+			class="lb-nav next"
+			aria-label="다음"
+			onclick={goNext}
+			disabled={viewIndex === g.images.length - 1}>›</button
+		>
 		<button class="lb-close" aria-label="닫기" onclick={close}>×</button>
-		<span class="lb-count">{lightboxIndex + 1} / {g.images.length}</span>
+		<span class="lb-count">{viewIndex + 1} / {g.images.length}</span>
 	</div>
 {/if}
 
@@ -304,40 +245,61 @@
 		position: fixed;
 		inset: 0;
 		z-index: 90;
-		display: grid;
-		place-items: center;
-		touch-action: none;
-		user-select: none;
-		-webkit-user-select: none;
 	}
 	.lb-overlay {
 		position: absolute;
 		inset: 0;
 		background: rgba(0, 0, 0, 0.9);
-		touch-action: none;
 	}
-	.lb-stage {
-		position: relative;
+	.lb-track {
+		position: absolute;
+		inset: 0;
 		z-index: 1;
-		flex-shrink: 0;
-		width: min(92vw, calc(100vw - 5.5rem));
-		height: min(78vh, calc(100vh - 7rem));
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+		width: 100%;
+		height: 100%;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scroll-snap-type: x mandatory;
+		scroll-behavior: smooth;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		touch-action: pan-x;
+		padding-inline: calc((100% - min(78%, calc(100% - 6rem))) / 2);
+		scroll-padding-inline: calc((100% - min(78%, calc(100% - 6rem))) / 2);
+	}
+	.lb-track::-webkit-scrollbar {
+		display: none;
+	}
+	.lb-slide {
+		position: relative;
+		flex: 0 0 auto;
+		width: min(78%, calc(100% - 6rem));
+		height: min(78svh, calc(100svh - 7rem));
 		overflow: hidden;
-		touch-action: none;
+		border-radius: 4px;
+		scroll-snap-align: center;
+		scroll-snap-stop: always;
+		transform: scale(0.82);
+		opacity: 0.55;
+		transition:
+			transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 0.35s ease;
+	}
+	.lb-slide.active {
+		transform: scale(1);
+		opacity: 1;
+		z-index: 1;
 	}
 	.lb-img {
 		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		max-width: 100%;
-		max-height: 100%;
-		width: auto;
-		height: auto;
+		inset: 0;
+		width: 100%;
+		height: 100%;
 		object-fit: contain;
 		object-position: center;
-		border-radius: 4px;
-		touch-action: none;
 		user-select: none;
 		-webkit-user-select: none;
 		-webkit-user-drag: none;
@@ -351,7 +313,6 @@
 	}
 	.lb-placeholder.lb-hidden {
 		opacity: 0;
-		pointer-events: none;
 	}
 	.lb-full {
 		z-index: 1;
@@ -379,6 +340,10 @@
 		border: none;
 		border-radius: 999px;
 		cursor: pointer;
+	}
+	.lb-nav:disabled {
+		opacity: 0.28;
+		cursor: default;
 	}
 	.lb-nav.prev {
 		left: 0.6rem;
@@ -415,5 +380,22 @@
 		font-family: var(--font-display);
 		letter-spacing: 0.1em;
 		font-size: 0.9rem;
+	}
+
+	@media (max-width: 820px) {
+		.lightbox {
+			container-type: size;
+		}
+		.lb-track {
+			gap: 0.55rem;
+			--slide-w: calc(100cqi - 0.75rem);
+			--slide-h: calc(100cqb - 4.5rem);
+			padding-inline: calc((100cqi - var(--slide-w)) / 2);
+			scroll-padding-inline: calc((100cqi - var(--slide-w)) / 2);
+		}
+		.lb-slide {
+			width: var(--slide-w);
+			height: var(--slide-h);
+		}
 	}
 </style>
