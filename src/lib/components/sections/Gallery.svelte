@@ -14,21 +14,12 @@
 	let viewIndex = $state(0);
 	let trackEl = $state<HTMLDivElement | null>(null);
 	let trackReady = $state(false);
-	let slideEls: (HTMLElement | null)[] = [];
 	let fullReady = $state<Record<string, boolean>>({});
 
 	function loadMore() {
 		visibleCount = Math.min(visibleCount + g.loadMoreCount, g.images.length);
 	}
 
-	function captureSlide(node: HTMLElement, index: number) {
-		slideEls[index] = node;
-		return {
-			destroy() {
-				if (slideEls[index] === node) slideEls[index] = null;
-			}
-		};
-	}
 	function scrollTarget(track: HTMLElement, slide: HTMLElement) {
 		return Math.max(0, slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2);
 	}
@@ -47,13 +38,63 @@
 	}
 	function scrollToIndex(index: number, behavior: ScrollBehavior = 'smooth') {
 		const track = trackEl;
-		const slide = slideEls[index];
+		const slide = track?.querySelectorAll<HTMLElement>('.lb-slide')[index];
 		if (!track || !slide) return;
 		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		track.scrollTo({
 			left: scrollTarget(track, slide),
 			behavior: reduced ? 'instant' : behavior
 		});
+	}
+	function windowIndices(index: number) {
+		const start = Math.max(0, index - 2);
+		const end = Math.min(g.images.length - 1, index + 2);
+		const indices: number[] = [];
+		for (let i = start; i <= end; i++) indices.push(i);
+		return indices;
+	}
+	const decoding = new Map<string, Promise<void>>();
+	function decodeFull(src: string) {
+		if (fullReady[src]) return Promise.resolve();
+		const pending = decoding.get(src);
+		if (pending) return pending;
+		const task = new Promise<void>((resolve) => {
+			const img = new Image();
+			let settled = false;
+			const finish = () => {
+				if (settled) return;
+				settled = true;
+				fullReady[src] = true;
+				decoding.delete(src);
+				resolve();
+			};
+			const fail = () => {
+				if (settled) return;
+				settled = true;
+				decoding.delete(src);
+				resolve();
+			};
+			img.onload = () => {
+				if (typeof img.decode === 'function') void img.decode().then(finish, finish);
+				else finish();
+			};
+			img.onerror = fail;
+			img.src = src;
+			if (img.complete) {
+				if (img.naturalWidth > 0) img.onload(new Event('load'));
+				else fail();
+			}
+		});
+		decoding.set(src, task);
+		return task;
+	}
+	function prepareWindow(index: number) {
+		return Promise.all(windowIndices(index).map((i) => decodeFull(g.images[i].full))).then(
+			() => undefined
+		);
+	}
+	function prepareAll() {
+		return Promise.all(g.images.map((item) => decodeFull(item.full))).then(() => undefined);
 	}
 	function wantsFull(index: number, src: string) {
 		return fullReady[src] || Math.abs(index - viewIndex) <= 2;
@@ -62,11 +103,11 @@
 		const track = trackEl;
 		if (!track || !trackReady) return;
 		const center = track.scrollLeft + track.clientWidth / 2;
+		const slides = track.querySelectorAll<HTMLElement>('.lb-slide');
 		let best = 0;
 		let bestDist = Infinity;
-		for (let i = 0; i < g.images.length; i++) {
-			const slide = slideEls[i];
-			if (!slide) continue;
+		for (let i = 0; i < slides.length; i++) {
+			const slide = slides[i];
 			const mid = slide.offsetLeft + slide.offsetWidth / 2;
 			const dist = Math.abs(mid - center);
 			if (dist < bestDist) {
@@ -76,18 +117,35 @@
 		}
 		viewIndex = best;
 	}
-	function openAt(i: number) {
+	let openSeq = 0;
+	async function openAt(i: number) {
+		const seq = ++openSeq;
+		await prepareAll();
+		if (seq !== openSeq) return;
 		viewIndex = i;
 		lightboxIndex = i;
 	}
 	function close() {
+		openSeq += 1;
 		lightboxIndex = null;
 	}
+	function windowReady(index: number) {
+		return windowIndices(index).every((i) => fullReady[g.images[i].full]);
+	}
+	let moveSeq = 0;
+	async function goTo(index: number) {
+		const next = Math.max(0, Math.min(g.images.length - 1, index));
+		if (lightboxIndex === null || next === viewIndex) return;
+		const seq = ++moveSeq;
+		if (!windowReady(next)) await prepareWindow(next);
+		if (seq !== moveSeq || lightboxIndex === null) return;
+		scrollToIndex(next);
+	}
 	function goPrev() {
-		scrollToIndex(Math.max(0, viewIndex - 1));
+		void goTo(viewIndex - 1);
 	}
 	function goNext() {
-		scrollToIndex(Math.min(g.images.length - 1, viewIndex + 1));
+		void goTo(viewIndex + 1);
 	}
 	function onKey(e: KeyboardEvent) {
 		if (lightboxIndex === null) return;
@@ -120,6 +178,11 @@
 				document.body.style.overflow = '';
 			};
 		}
+	});
+
+	$effect(() => {
+		if (lightboxIndex === null) return;
+		void prepareWindow(viewIndex);
 	});
 
 </script>
@@ -172,7 +235,7 @@
 			aria-label="웨딩 갤러리"
 		>
 			{#each g.images as item, i (item.full)}
-				<div class="lb-slide" class:active={i === viewIndex} role="listitem" use:captureSlide={i}>
+				<div class="lb-slide" class:active={i === viewIndex} role="listitem">
 					<img
 						class="lb-img lb-placeholder"
 						class:lb-hidden={fullReady[item.full]}
